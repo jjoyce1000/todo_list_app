@@ -1312,6 +1312,7 @@
     .edit-cancel-btn:hover { background: #f5f5f5; }
 
     #importCsvBtn,
+      #syncNowBtn,
       .toggle-overview-btn,
       .reset-btn {
         min-height: 44px;
@@ -1330,6 +1331,21 @@
 
     .import-csv-btn:hover {
       background: #27ae60;
+      color: white;
+    }
+    .sync-now-btn {
+      padding: 0.45rem 0.9rem;
+      border: 1.5px solid #2980b9;
+      border-radius: 7px;
+      background: white;
+      color: #2980b9;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+    .sync-now-btn:hover {
+      background: #2980b9;
       color: white;
     }
   </style>
@@ -1362,6 +1378,7 @@
         <span class="user-email-display" id="userEmailDisplay"></span>
         <button class="logout-btn" id="logoutBtn">Log out</button>
       </div>
+      <button class="sync-now-btn" id="syncNowBtn" style="display:none" title="Sync data to server">Sync now</button>
       <button class="import-csv-btn" id="importCsvBtn">📥 Import CSV</button>
       <input type="file" id="csvFileInput" accept=".csv" style="display:none">
       <button class="toggle-overview-btn" id="toggleOverviewBtn">Hide Overview</button>
@@ -1663,11 +1680,11 @@
         }).then(r => { if (!r.ok) throw new Error('Sync failed'); }).catch(() => {});
       }, 300);
     }
-    async function syncImmediate() {
+    async function syncImmediate(timeoutMs = 90000) {
       if (!USE_API) return;
       if (saveDebounceTimer) { clearTimeout(saveDebounceTimer); saveDebounceTimer = null; }
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 90000);
+      const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
       try {
         const r = await apiFetch('/api/sync', {
           method: 'POST',
@@ -1814,10 +1831,16 @@
     function showAuthOverlay() {
       document.getElementById('authOverlay').classList.remove('hidden');
       document.getElementById('userLogoutWrap').style.display = 'none';
+      const sb = document.getElementById('syncNowBtn');
+      if (sb) sb.style.display = 'none';
     }
     function hideAuthOverlay() {
       document.getElementById('authOverlay').classList.add('hidden');
-      if (USE_API) document.getElementById('userLogoutWrap').style.display = 'flex';
+      if (USE_API) {
+        document.getElementById('userLogoutWrap').style.display = 'flex';
+        const sb = document.getElementById('syncNowBtn');
+        if (sb) sb.style.display = '';
+      }
     }
     function setUserEmail(email) {
       document.getElementById('userEmailDisplay').textContent = email || '';
@@ -2701,11 +2724,11 @@
         let syncFailed = false;
         let syncError = '';
         if (USE_API) {
-          const delays = [0, 3000, 8000];
+          const delays = [0, 15000, 45000];
           for (let i = 0; i < delays.length; i++) {
             if (i > 0) await new Promise(r => setTimeout(r, delays[i]));
             try {
-              await syncImmediate();
+              await syncImmediate(120000);
               break;
             } catch (err) {
               syncError = err.message || 'Unknown';
@@ -2717,7 +2740,7 @@
         renderTags();
         renderTasks();
         if (syncFailed) {
-          alert(`Imported ${added} task(s) locally, but sync to server failed.\n\nError: ${syncError}\n\nData may be lost on refresh or when switching accounts. If using Render, the server may be starting—wait a minute and try importing again.`);
+          alert(`Imported ${added} task(s) locally, but sync to server failed.\n\nError: ${syncError}\n\nData may be lost on refresh. Click "Sync now" in the header to retry (e.g. after Render wakes up).`);
         } else {
           alert(`Imported ${added} task(s).`);
         }
@@ -3094,6 +3117,22 @@
     });
 
     document.getElementById('importCsvBtn').addEventListener('click', () => document.getElementById('csvFileInput').click());
+    if (USE_API) {
+      document.getElementById('syncNowBtn').addEventListener('click', async () => {
+        const btn = document.getElementById('syncNowBtn');
+        btn.disabled = true;
+        btn.textContent = 'Syncing…';
+        try {
+          await syncImmediate();
+          btn.textContent = 'Synced ✓';
+          setTimeout(() => { btn.textContent = 'Sync now'; btn.disabled = false; }, 1500);
+        } catch (e) {
+          btn.textContent = 'Sync now';
+          btn.disabled = false;
+          alert('Sync failed: ' + (e.message || 'Unknown error'));
+        }
+      });
+    }
     document.getElementById('csvFileInput').addEventListener('change', e => {
       const f = e.target.files[0];
       if (f) { importFromCSV(f); e.target.value = ''; }
