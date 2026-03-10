@@ -1652,8 +1652,26 @@
     async function syncImmediate() {
       if (!USE_API) return;
       if (saveDebounceTimer) { clearTimeout(saveDebounceTimer); saveDebounceTimer = null; }
-      const r = await apiFetch('/api/sync', { method: 'POST', body: JSON.stringify({ courses, tags, tasks }) });
-      if (!r.ok) throw new Error('Sync failed');
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 90000);
+      try {
+        const r = await apiFetch('/api/sync', {
+          method: 'POST',
+          body: JSON.stringify({ courses, tags, tasks }),
+          signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+        if (!r.ok) {
+          const errMsg = await r.text().catch(() => '');
+          let msg = 'Sync failed';
+          try { const j = JSON.parse(errMsg); if (j.error) msg = j.error; } catch (_) { if (errMsg) msg = errMsg.slice(0, 100); }
+          throw new Error(msg);
+        }
+      } catch (e) {
+        clearTimeout(timeoutId);
+        if (e.name === 'AbortError') throw new Error('Sync timed out (server may be starting). Try again.');
+        throw e;
+      }
     }
 
     let userPreferences = {};
@@ -1776,11 +1794,6 @@
         done: !!t.done,
         parentId: t.parentId || ''
       }));
-      if (tags.length === 0) {
-        const DEFAULT_TAGS = [{ name: 'Exercise', color: '#27ae60' }, { name: 'Personal', color: '#8e44ad' }, { name: 'School', color: '#2980b9' }, { name: 'Other', color: '#7f8c8d' }];
-        tags = DEFAULT_TAGS.map(t => ({ id: genId(), name: t.name, color: t.color }));
-        debouncedSync();
-      }
       if (data.preferences) userPreferences = data.preferences;
     }
 
@@ -1804,7 +1817,6 @@
 
     let courses = USE_API ? [] : JSON.parse(localStorage.getItem('td_courses') || '[]');
     let tasks   = USE_API ? [] : JSON.parse(localStorage.getItem('td_tasks')   || '[]');
-    const DEFAULT_TAGS = [{ name: 'Exercise', color: '#27ae60' }, { name: 'Personal', color: '#8e44ad' }, { name: 'School', color: '#2980b9' }, { name: 'Other', color: '#7f8c8d' }];
     let tags = USE_API ? [] : JSON.parse(localStorage.getItem('td_tags') || '[]');
     const pendingRemovalTaskIds = new Set();
     const selectedTaskIds = new Set();
@@ -1870,11 +1882,6 @@
     }
 
     function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2); }
-
-    if (!USE_API && tags.length === 0) {
-      tags = DEFAULT_TAGS.map(t => ({ id: genId(), name: t.name, color: t.color }));
-      save();
-    }
 
     /* ═══════════════════════════════════════════
        Date utilities
@@ -2674,22 +2681,29 @@
           added++;
         }
         save();
+        let syncFailed = false;
+        let syncError = '';
         if (USE_API) {
-          try {
-            await syncImmediate();
-          } catch (err) {
+          const delays = [0, 3000, 8000];
+          for (let i = 0; i < delays.length; i++) {
+            if (i > 0) await new Promise(r => setTimeout(r, delays[i]));
             try {
-              await new Promise(r => setTimeout(r, 2000));
               await syncImmediate();
-            } catch (err2) {
-              alert('Import may not have synced. If you switch accounts, data could be lost. Error: ' + (err2.message || 'Unknown'));
+              break;
+            } catch (err) {
+              syncError = err.message || 'Unknown';
+              if (i === delays.length - 1) syncFailed = true;
             }
           }
         }
         renderCourses();
         renderTags();
         renderTasks();
-        alert(`Imported ${added} task(s).`);
+        if (syncFailed) {
+          alert(`Imported ${added} task(s) locally, but sync to server failed.\n\nError: ${syncError}\n\nData may be lost on refresh or when switching accounts. If using Render, the server may be starting—wait a minute and try importing again.`);
+        } else {
+          alert(`Imported ${added} task(s).`);
+        }
       };
       reader.readAsText(file);
     }

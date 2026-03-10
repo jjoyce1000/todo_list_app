@@ -174,27 +174,32 @@ app.delete('/api/tasks/:id', authMiddleware, async (req, res) => {
 });
 
 app.post('/api/sync', authMiddleware, async (req, res) => {
-  const { courses: cs, tags: ts, tasks: tks } = req.body;
-  if (!Array.isArray(cs) || !Array.isArray(ts) || !Array.isArray(tks)) {
-    return res.status(400).json({ error: 'courses, tags, tasks arrays required' });
+  try {
+    const { courses: cs, tags: ts, tasks: tks } = req.body;
+    if (!Array.isArray(cs) || !Array.isArray(ts) || !Array.isArray(tks)) {
+      return res.status(400).json({ error: 'courses, tags, tasks arrays required' });
+    }
+    const uid = req.userId;
+    await db.transaction(async (tx) => {
+      await tx.run('DELETE FROM courses WHERE user_id = ?', uid);
+      await tx.run('DELETE FROM tags WHERE user_id = ?', uid);
+      await tx.run('DELETE FROM tasks WHERE user_id = ?', uid);
+      for (const c of cs) {
+        await tx.run('INSERT INTO courses (id, user_id, name, description) VALUES (?, ?, ?, ?)', c.id, uid, c.name, c.description || '');
+      }
+      for (const t of ts) {
+        await tx.run('INSERT INTO tags (id, user_id, name, color) VALUES (?, ?, ?, ?)', t.id, uid, t.name, t.color || '#4a90d9');
+      }
+      for (const t of tks) {
+        await tx.run('INSERT INTO tasks (id, user_id, text, due_date, course_id, category, done, parent_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+          t.id, uid, t.text, t.dueDate || null, t.courseId || '', t.category || '', t.done ? 1 : 0, t.parentId || null);
+      }
+    });
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('Sync error:', err);
+    res.status(500).json({ error: err.message || 'Sync failed' });
   }
-  const uid = req.userId;
-  await db.transaction(async (tx) => {
-    await tx.run('DELETE FROM courses WHERE user_id = ?', uid);
-    await tx.run('DELETE FROM tags WHERE user_id = ?', uid);
-    await tx.run('DELETE FROM tasks WHERE user_id = ?', uid);
-    for (const c of cs) {
-      await tx.run('INSERT INTO courses (id, user_id, name, description) VALUES (?, ?, ?, ?)', c.id, uid, c.name, c.description || '');
-    }
-    for (const t of ts) {
-      await tx.run('INSERT INTO tags (id, user_id, name, color) VALUES (?, ?, ?, ?)', t.id, uid, t.name, t.color || '#4a90d9');
-    }
-    for (const t of tks) {
-      await tx.run('INSERT INTO tasks (id, user_id, text, due_date, course_id, category, done, parent_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-        t.id, uid, t.text, t.dueDate || null, t.courseId || '', t.category || '', t.done ? 1 : 0, t.parentId || null);
-    }
-  });
-  res.json({ ok: true });
 });
 
 app.use(express.static(path.join(__dirname, '..')));
