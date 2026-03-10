@@ -112,11 +112,12 @@
       display: flex;
       flex-direction: column;
       align-items: flex-end;
-      gap: 0.25rem;
+      gap: 0.2rem;
     }
     .user-email-display {
-      font-size: 0.75rem;
-      color: #666;
+      font-size: 0.8rem;
+      color: #444;
+      line-height: 1.2;
     }
 
     /* ── Two-pane layout ── */
@@ -3133,7 +3134,7 @@
         const r = await apiFetch('/api/me');
         if (!r.ok) throw new Error();
         const me = await r.json();
-        setUserEmail(me.email);
+        setUserEmail(me?.email ?? me?.user?.email ?? '');
         await loadDataFromApi();
         hideAuthOverlay();
         renderCourses();
@@ -3175,7 +3176,7 @@
           const data = await parseAuthResponse(r);
           if (!r.ok) throw new Error(data.error || 'Login failed');
           setToken(data.token);
-          setUserEmail(data.user?.email || email);
+          setUserEmail((data.user?.email ?? data.email ?? email) || '');
           await loadDataFromApi();
           onAuthSuccess();
         } catch (e) {
@@ -3192,7 +3193,7 @@
           const data = await parseAuthResponse(r);
           if (!r.ok) throw new Error(data.error || 'Registration failed');
           setToken(data.token);
-          setUserEmail(data.user?.email || email);
+          setUserEmail((data.user?.email ?? data.email ?? email) || '');
           await loadDataFromApi();
           onAuthSuccess();
         } catch (e) {
