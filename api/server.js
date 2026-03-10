@@ -4,11 +4,12 @@ const path = require('path');
 const db = require('./db');
 const auth = require('./auth');
 
+const usePostgres = !!process.env.DATABASE_URL;
 const app = express();
 const PORT = process.env.PORT || 3001;
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
 
 function authMiddleware(req, res, next) {
   const header = req.headers.authorization;
@@ -175,20 +176,33 @@ app.delete('/api/tasks/:id', authMiddleware, async (req, res) => {
 
 app.post('/api/sync', authMiddleware, async (req, res) => {
   try {
-    const { courses: cs, tags: ts, tasks: tks } = req.body;
+    const { courses: cs, tags: ts, tasks: tks, merge } = req.body;
     if (!Array.isArray(cs) || !Array.isArray(ts) || !Array.isArray(tks)) {
       return res.status(400).json({ error: 'courses, tags, tasks arrays required' });
     }
     const uid = req.userId;
+    const useMerge = !!merge;
     await db.transaction(async (tx) => {
-      await tx.run('DELETE FROM courses WHERE user_id = ?', uid);
-      await tx.run('DELETE FROM tags WHERE user_id = ?', uid);
-      await tx.run('DELETE FROM tasks WHERE user_id = ?', uid);
+      if (!useMerge) {
+        await tx.run('DELETE FROM courses WHERE user_id = ?', uid);
+        await tx.run('DELETE FROM tags WHERE user_id = ?', uid);
+        await tx.run('DELETE FROM tasks WHERE user_id = ?', uid);
+      }
+      const courseUpsert = useMerge && usePostgres
+        ? 'INSERT INTO courses (id, user_id, name, description) VALUES (?, ?, ?, ?) ON CONFLICT (id) DO UPDATE SET user_id=EXCLUDED.user_id, name=EXCLUDED.name, description=EXCLUDED.description'
+        : useMerge
+          ? 'INSERT OR REPLACE INTO courses (id, user_id, name, description) VALUES (?, ?, ?, ?)'
+          : null;
+      const tagUpsert = useMerge && usePostgres
+        ? 'INSERT INTO tags (id, user_id, name, color) VALUES (?, ?, ?, ?) ON CONFLICT (id) DO UPDATE SET user_id=EXCLUDED.user_id, name=EXCLUDED.name, color=EXCLUDED.color'
+        : useMerge
+          ? 'INSERT OR REPLACE INTO tags (id, user_id, name, color) VALUES (?, ?, ?, ?)'
+          : null;
       for (const c of cs) {
-        await tx.run('INSERT INTO courses (id, user_id, name, description) VALUES (?, ?, ?, ?)', c.id, uid, c.name, c.description || '');
+        await tx.run(courseUpsert || 'INSERT INTO courses (id, user_id, name, description) VALUES (?, ?, ?, ?)', c.id, uid, c.name, c.description || '');
       }
       for (const t of ts) {
-        await tx.run('INSERT INTO tags (id, user_id, name, color) VALUES (?, ?, ?, ?)', t.id, uid, t.name, t.color || '#4a90d9');
+        await tx.run(tagUpsert || 'INSERT INTO tags (id, user_id, name, color) VALUES (?, ?, ?, ?)', t.id, uid, t.name, t.color || '#4a90d9');
       }
       for (const t of tks) {
         await tx.run('INSERT INTO tasks (id, user_id, text, due_date, course_id, category, done, parent_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',

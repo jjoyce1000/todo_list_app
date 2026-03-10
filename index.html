@@ -1654,7 +1654,8 @@
     ═══════════════════════════════════════════ */
     const USE_API = (window.location.protocol === 'http:' || window.location.protocol === 'https:');
     const API_URL = 'https://todo-list-app-rrjb.onrender.com';
-    const API_BASE = (USE_API && window.location.origin !== API_URL && window.location.origin !== 'http://localhost:3001') ? API_URL : '';
+    const LOCAL_ORIGINS = ['http://localhost:3001', 'http://127.0.0.1:3001'];
+    const API_BASE = (USE_API && window.location.origin !== API_URL && !LOCAL_ORIGINS.includes(window.location.origin)) ? API_URL : '';
 
     function getToken() { return localStorage.getItem('td_token'); }
     function setToken(t) { localStorage.setItem('td_token', t); }
@@ -1695,9 +1696,50 @@
         if (!r.ok) {
           const errMsg = await r.text().catch(() => '');
           let msg = 'Sync failed';
-          try { const j = JSON.parse(errMsg); if (j.error) msg = j.error; } catch (_) { if (errMsg) msg = errMsg.slice(0, 100); }
+          try {
+            const j = JSON.parse(errMsg);
+            if (j.error) msg = j.error;
+          } catch (_) {
+            if (/^\s*<(!DOCTYPE|html)/i.test(errMsg)) {
+              msg = r.status === 404 ? 'API not found. Is the server running?' : 'Server returned an error page (may be starting or unavailable).';
+            } else if (errMsg) msg = errMsg.slice(0, 80).trim();
+          }
           throw new Error(msg);
         }
+      } catch (e) {
+        clearTimeout(timeoutId);
+        if (e.name === 'AbortError') throw new Error('Sync timed out (server may be starting). Try again.');
+        throw e;
+      }
+    }
+
+    const SYNC_BATCH_SIZE = 200;
+    async function syncBatched(timeoutMs = 300000) {
+      if (!USE_API) return;
+      if (saveDebounceTimer) { clearTimeout(saveDebounceTimer); saveDebounceTimer = null; }
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+      try {
+        const numBatches = Math.max(1, Math.ceil(tasks.length / SYNC_BATCH_SIZE));
+        for (let b = 0; b < numBatches; b++) {
+          const chunk = tasks.slice(b * SYNC_BATCH_SIZE, (b + 1) * SYNC_BATCH_SIZE);
+          const payload = { courses, tags, tasks: chunk, merge: b > 0 };
+          const r = await apiFetch('/api/sync', {
+            method: 'POST',
+            body: JSON.stringify(payload),
+            signal: controller.signal
+          });
+          if (!r.ok) {
+            const errMsg = await r.text().catch(() => '');
+            let msg = 'Sync failed';
+            try { const j = JSON.parse(errMsg); if (j.error) msg = j.error; } catch (_) { if (errMsg) msg = errMsg.slice(0, 80).trim(); }
+            throw new Error(msg);
+          }
+          if (b + 1 < numBatches) {
+            await new Promise(r => setTimeout(r, 300));
+          }
+        }
+        clearTimeout(timeoutId);
       } catch (e) {
         clearTimeout(timeoutId);
         if (e.name === 'AbortError') throw new Error('Sync timed out (server may be starting). Try again.');
@@ -2732,7 +2774,16 @@
               break;
             } catch (err) {
               syncError = err.message || 'Unknown';
-              if (i === delays.length - 1) syncFailed = true;
+              if (i === delays.length - 1) {
+                try {
+                  await syncBatched(300000);
+                  syncFailed = false;
+                  syncError = '';
+                } catch (batchErr) {
+                  syncError = batchErr.message || 'Unknown';
+                  syncFailed = true;
+                }
+              }
             }
           }
         }
@@ -3127,9 +3178,15 @@
           btn.textContent = 'Synced ✓';
           setTimeout(() => { btn.textContent = 'Sync now'; btn.disabled = false; }, 1500);
         } catch (e) {
-          btn.textContent = 'Sync now';
-          btn.disabled = false;
-          alert('Sync failed: ' + (e.message || 'Unknown error'));
+          try {
+            await syncBatched();
+            btn.textContent = 'Synced ✓';
+            setTimeout(() => { btn.textContent = 'Sync now'; btn.disabled = false; }, 1500);
+          } catch (batchErr) {
+            btn.textContent = 'Sync now';
+            btn.disabled = false;
+            alert('Sync failed: ' + (batchErr.message || 'Unknown error'));
+          }
         }
       });
     }
