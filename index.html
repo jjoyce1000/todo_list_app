@@ -595,6 +595,11 @@
     }
 
     /* ── Section divider ── */
+    .import-hint {
+      font-size: 0.72rem;
+      color: #888;
+      margin: 0.35rem 0 0;
+    }
     .section-label {
       font-size: 0.78rem;
       font-weight: 700;
@@ -944,6 +949,10 @@
           </div>
         </div>
         <button class="btn-primary btn-full" id="addTaskBtn">Add Task</button>
+        <div class="section-label" style="margin-top:1rem">Import</div>
+        <input type="file" id="csvImportInput" accept=".csv" style="display:none">
+        <button class="toggle-overview-btn btn-full" id="csvImportBtn">📥 Import CSV</button>
+        <p class="import-hint">Format: Category, Task, Course, Due Date, Status</p>
       </div>
 
     </div><!-- /left-pane -->
@@ -1528,6 +1537,89 @@
       save();
       renderTasks();
     });
+
+    document.getElementById('csvImportBtn').addEventListener('click', () => document.getElementById('csvImportInput').click());
+    document.getElementById('csvImportInput').addEventListener('change', async (e) => {
+      const file = e.target.files?.[0];
+      e.target.value = '';
+      if (!file) return;
+      if (USE_API && !getToken()) {
+        alert('Please log in to import CSV.');
+        return;
+      }
+      try {
+        const text = await file.text();
+        const lines = text.split(/\r?\n/).filter(l => l.trim());
+        const courseMap = {};
+        const importedTasks = [];
+        for (let i = 0; i < lines.length; i++) {
+          const row = parseCSVLine(lines[i]);
+          if (row.length < 2) continue;
+          const [category, taskText, courseName, dueDate, status] = row;
+          if (!taskText) continue;
+          let courseId = '';
+          if (courseName && courseName.trim()) {
+            const cname = courseName.trim();
+            if (!courseMap[cname]) {
+              courseMap[cname] = genId();
+              courses.push({ id: courseMap[cname], name: cname, description: '' });
+            }
+            courseId = courseMap[cname];
+          }
+          const done = /^(1|true|yes|done|complete|x|✓)$/i.test(String(status || '').trim());
+          importedTasks.push({
+            id: genId(),
+            text: taskText.trim(),
+            dueDate: (dueDate || '').trim(),
+            courseId,
+            category: (category || '').trim(),
+            done,
+            parentId: ''
+          });
+        }
+        tasks = tasks.concat(importedTasks);
+        if (USE_API) {
+          const r = await apiFetch('/api/sync', {
+            method: 'POST',
+            body: JSON.stringify({
+              courses,
+              tags,
+              tasks: tasks.map(t => ({
+                id: t.id, text: t.text, dueDate: t.dueDate || '', courseId: t.courseId || '',
+                category: t.category || '', done: !!t.done, parentId: t.parentId || ''
+              })),
+              merge: true
+            })
+          });
+          if (!r.ok) throw new Error('Sync failed');
+          await loadDataFromApi();
+        } else {
+          save();
+        }
+        renderCourses();
+        renderTasks();
+        alert(`Imported ${importedTasks.length} task(s).`);
+      } catch (err) {
+        alert('Import failed: ' + (err.message || 'Unknown error'));
+      }
+    });
+    function parseCSVLine(line) {
+      const out = [];
+      let cur = '', inQ = false;
+      for (let i = 0; i < line.length; i++) {
+        const c = line[i];
+        if (c === '"') {
+          inQ = !inQ;
+        } else if ((c === ',' && !inQ) || c === '\t') {
+          out.push(cur);
+          cur = '';
+        } else {
+          cur += c;
+        }
+      }
+      out.push(cur);
+      return out.map(s => s.replace(/^"|"$/g, '').trim());
+    }
 
     document.getElementById('ovSort').addEventListener('change', renderOverview);
     document.getElementById('ovDir').addEventListener('change', renderOverview);
