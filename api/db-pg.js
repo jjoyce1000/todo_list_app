@@ -63,6 +63,7 @@ async function init() {
         description TEXT DEFAULT '',
         created_at TIMESTAMPTZ DEFAULT NOW()
       );
+      ALTER TABLE courses ADD COLUMN IF NOT EXISTS color TEXT DEFAULT '#4a90d9';
       CREATE TABLE IF NOT EXISTS tags (
         id TEXT PRIMARY KEY,
         user_id TEXT NOT NULL,

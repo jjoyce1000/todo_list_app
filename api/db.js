@@ -31,6 +31,7 @@ if (usePostgres) {
     CREATE INDEX IF NOT EXISTS idx_usage_log_user ON usage_log(user_id);
   `);
   try { sqlite.exec("ALTER TABLE users ADD COLUMN role TEXT DEFAULT 'user'"); } catch(e) { /* column may exist */ }
+  try { sqlite.exec("ALTER TABLE courses ADD COLUMN color TEXT DEFAULT '#4a90d9'"); } catch(e) { /* column may exist */ }
   const txDb = {
     get: (s, ...p) => Promise.resolve(sqlite.prepare(s).get(...p)),
     all: (s, ...p) => Promise.resolve(sqlite.prepare(s).all(...p)),

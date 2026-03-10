@@ -79,8 +79,8 @@ app.get('/api/me', authMiddleware, async (req, res) => {
 });
 
 app.get('/api/courses', authMiddleware, async (req, res) => {
-  const rows = await db.all('SELECT id, name, description FROM courses WHERE user_id = ?', req.userId);
-  res.json(rows);
+  const rows = await db.all('SELECT id, name, description, color FROM courses WHERE user_id = ?', req.userId);
+  res.json(rows.map(r => ({ id: r.id, name: r.name, description: r.description || '', color: r.color || null })));
 });
 
 app.post('/api/courses', authMiddleware, async (req, res) => {
@@ -147,7 +147,8 @@ app.get('/api/data', authMiddleware, async (req, res) => {
   if (usePostgres) {
     db.run('INSERT INTO usage_log (user_id) VALUES (?)', req.userId).catch(() => {});
   }
-  const courses = await db.all('SELECT id, name, description FROM courses WHERE user_id = ?', req.userId);
+  const courseRows = await db.all('SELECT id, name, description, color FROM courses WHERE user_id = ?', req.userId);
+  const courses = courseRows.map(r => ({ id: r.id, name: r.name, description: r.description || '', color: r.color || undefined }));
   const tags = await db.all('SELECT id, name, color FROM tags WHERE user_id = ?', req.userId);
   const taskRows = await db.all('SELECT id, text, due_date, course_id, category, done, parent_id FROM tasks WHERE user_id = ?', req.userId);
   const tasks = taskRows.map(taskRowToObj);
@@ -210,9 +211,9 @@ app.post('/api/sync', authMiddleware, async (req, res) => {
         await tx.run('DELETE FROM tasks WHERE user_id = ?', uid);
       }
       const courseUpsert = useMerge && usePostgres
-        ? 'INSERT INTO courses (id, user_id, name, description) VALUES (?, ?, ?, ?) ON CONFLICT (id) DO UPDATE SET user_id=EXCLUDED.user_id, name=EXCLUDED.name, description=EXCLUDED.description'
+        ? 'INSERT INTO courses (id, user_id, name, description, color) VALUES (?, ?, ?, ?, ?) ON CONFLICT (id) DO UPDATE SET user_id=EXCLUDED.user_id, name=EXCLUDED.name, description=EXCLUDED.description, color=EXCLUDED.color'
         : useMerge
-          ? 'INSERT OR REPLACE INTO courses (id, user_id, name, description) VALUES (?, ?, ?, ?)'
+          ? 'INSERT OR REPLACE INTO courses (id, user_id, name, description, color) VALUES (?, ?, ?, ?, ?)'
           : null;
       const tagUpsert = useMerge && usePostgres
         ? 'INSERT INTO tags (id, user_id, name, color) VALUES (?, ?, ?, ?) ON CONFLICT (id) DO UPDATE SET user_id=EXCLUDED.user_id, name=EXCLUDED.name, color=EXCLUDED.color'
@@ -220,13 +221,18 @@ app.post('/api/sync', authMiddleware, async (req, res) => {
           ? 'INSERT OR REPLACE INTO tags (id, user_id, name, color) VALUES (?, ?, ?, ?)'
           : null;
       for (const c of cs) {
-        await tx.run(courseUpsert || 'INSERT INTO courses (id, user_id, name, description) VALUES (?, ?, ?, ?)', c.id, uid, c.name, c.description || '');
+        await tx.run(courseUpsert || 'INSERT INTO courses (id, user_id, name, description, color) VALUES (?, ?, ?, ?, ?)', c.id, uid, c.name, c.description || '', c.color || '#4a90d9');
       }
       for (const t of ts) {
         await tx.run(tagUpsert || 'INSERT INTO tags (id, user_id, name, color) VALUES (?, ?, ?, ?)', t.id, uid, t.name, t.color || '#4a90d9');
       }
+      const taskUpsert = useMerge && usePostgres
+        ? 'INSERT INTO tasks (id, user_id, text, due_date, course_id, category, done, parent_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT (id) DO UPDATE SET user_id=EXCLUDED.user_id, text=EXCLUDED.text, due_date=EXCLUDED.due_date, course_id=EXCLUDED.course_id, category=EXCLUDED.category, done=EXCLUDED.done, parent_id=EXCLUDED.parent_id'
+        : useMerge
+          ? 'INSERT OR REPLACE INTO tasks (id, user_id, text, due_date, course_id, category, done, parent_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+          : null;
       for (const t of tks) {
-        await tx.run('INSERT INTO tasks (id, user_id, text, due_date, course_id, category, done, parent_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+        await tx.run(taskUpsert || 'INSERT INTO tasks (id, user_id, text, due_date, course_id, category, done, parent_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
           t.id, uid, t.text, t.dueDate || null, t.courseId || '', t.category || '', t.done ? 1 : 0, t.parentId || null);
       }
     });
