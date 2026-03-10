@@ -92,6 +92,66 @@
       color: white;
     }
 
+    .auth-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    }
+    .auth-overlay.hidden { display: none; }
+    .auth-box {
+      background: white;
+      padding: 1.5rem 2rem;
+      border-radius: 10px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+      min-width: 280px;
+    }
+    .auth-box h2 { margin: 0 0 1rem; font-size: 1.2rem; }
+    .auth-box .field { margin-bottom: 0.75rem; }
+    .auth-box .field label { display: block; font-size: 0.85rem; margin-bottom: 0.25rem; }
+    .auth-box .field input { width: 100%; padding: 0.5rem; }
+    .auth-box .auth-actions { display: flex; gap: 0.5rem; margin-top: 1rem; }
+    .auth-box .auth-error { color: #e74c3c; font-size: 0.85rem; margin-top: 0.5rem; }
+    .login-btn, .logout-btn {
+      padding: 0.45rem 0.9rem;
+      border: 1.5px solid #666;
+      border-radius: 7px;
+      background: white;
+      color: #333;
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+    .login-btn:hover, .logout-btn:hover { background: #eee; }
+    .user-logout-wrap { display: flex; flex-direction: column; align-items: flex-end; gap: 0.2rem; }
+    .user-email-display { font-size: 0.8rem; color: #444; }
+    .admin-panel-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9998;
+    }
+    .admin-panel-overlay.hidden { display: none; }
+    .admin-panel {
+      background: white;
+      padding: 1.5rem 2rem;
+      border-radius: 10px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+      min-width: 400px;
+      max-width: 90vw;
+    }
+    .admin-panel h3 { margin: 0 0 1rem; }
+    .admin-panel .stats-result { margin-top: 1rem; }
+    .admin-panel .stats-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+    .admin-panel .stats-table th, .admin-panel .stats-table td { padding: 0.5rem; text-align: left; border-bottom: 1px solid #eee; }
+    .admin-panel .stats-result .error { color: #e74c3c; font-size: 0.9rem; }
+    .admin-panel .close-btn { margin-top: 1rem; }
+
     /* ── Two-pane layout ── */
     .app-wrapper {
       display: grid;
@@ -745,10 +805,43 @@
 </head>
 <body>
 
+  <div class="auth-overlay hidden" id="authOverlay">
+    <div class="auth-box">
+      <h2>Sign in</h2>
+      <div class="field">
+        <label for="authEmail">Email</label>
+        <input type="email" id="authEmail" placeholder="you@example.com">
+      </div>
+      <div class="field">
+        <label for="authPassword">Password</label>
+        <input type="password" id="authPassword" placeholder="••••••••">
+      </div>
+      <div class="auth-error" id="authError"></div>
+      <div class="auth-actions">
+        <button class="btn-primary" id="authLoginBtn">Log in</button>
+        <button class="toggle-overview-btn" id="authRegisterBtn">Register</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="admin-panel-overlay hidden" id="adminPanelOverlay">
+    <div class="admin-panel">
+      <h3>Admin – Usage Stats</h3>
+      <button class="btn-primary" id="adminGetStatsBtn">Get usage stats</button>
+      <div class="stats-result" id="adminStatsResult"></div>
+      <button class="login-btn close-btn" id="adminPanelCloseBtn">Close</button>
+    </div>
+  </div>
+
   <div class="page-header">
     <h1>📋 To-Do List</h1>
     <div class="header-actions">
-      <a href="/admin" class="admin-link" title="Admin – usage stats">Admin</a>
+      <div class="user-logout-wrap" id="userLogoutWrap" style="display:none">
+        <span class="user-email-display" id="userEmailDisplay"></span>
+        <button class="logout-btn" id="logoutBtn">Log out</button>
+      </div>
+      <button class="login-btn" id="loginBtn" style="display:none">Log in</button>
+      <button class="admin-link" id="adminBtn" style="display:none" title="Admin – usage stats">Admin</button>
       <button class="toggle-overview-btn" id="toggleOverviewBtn">Hide Overview</button>
       <button class="reset-btn" id="resetBtn">🗑 Reset All Tasks</button>
     </div>
@@ -898,6 +991,57 @@
 
   <script>
     /* ═══════════════════════════════════════════
+       API & Auth
+    ═══════════════════════════════════════════ */
+    const USE_API = (window.location.protocol === 'http:' || window.location.protocol === 'https:');
+    const API_URL = 'https://todo-list-app-rrjb.onrender.com';
+    const LOCAL_ORIGINS = ['http://localhost:3001', 'http://127.0.0.1:3001'];
+    const API_BASE = (USE_API && window.location.origin !== API_URL && !LOCAL_ORIGINS.includes(window.location.origin)) ? API_URL : '';
+
+    function getToken() { return localStorage.getItem('td_token'); }
+    function setToken(t) { localStorage.setItem('td_token', t); }
+    function clearToken() { localStorage.removeItem('td_token'); }
+
+    let currentUser = null;
+
+    async function apiFetch(path, options = {}) {
+      const token = getToken();
+      const headers = { ...options.headers, 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = 'Bearer ' + token;
+      const res = await fetch(API_BASE + path, { ...options, headers });
+      if (res.status === 401) { clearToken(); throw new Error('Unauthorized'); }
+      return res;
+    }
+
+    function showAuthOverlay() {
+      document.getElementById('authOverlay').classList.remove('hidden');
+      document.getElementById('userLogoutWrap').style.display = 'none';
+      document.getElementById('adminBtn').style.display = 'none';
+      document.getElementById('loginBtn').style.display = 'none';
+    }
+    function hideAuthOverlay() {
+      document.getElementById('authOverlay').classList.add('hidden');
+      if (USE_API) {
+        document.getElementById('loginBtn').style.display = 'none';
+        document.getElementById('userLogoutWrap').style.display = 'flex';
+        document.getElementById('userEmailDisplay').textContent = currentUser?.email || '';
+        document.getElementById('adminBtn').style.display = (currentUser?.role === 'admin') ? '' : 'none';
+      }
+    }
+
+    let userPreferences = {};
+    async function loadDataFromApi() {
+      const res = await apiFetch('/api/data');
+      if (!res.ok) throw new Error('Failed to load data');
+      const data = await res.json();
+      courses = data.courses || [];
+      tasks = data.tasks || [];
+      if (data.preferences && typeof data.preferences === 'object') {
+        Object.assign(userPreferences, data.preferences);
+      }
+    }
+
+    /* ═══════════════════════════════════════════
        Data
     ═══════════════════════════════════════════ */
     const COURSE_COLORS = [
@@ -906,10 +1050,30 @@
       '#7f8c8d','#d35400'
     ];
 
-    let courses = JSON.parse(localStorage.getItem('td_courses') || '[]');
-    let tasks   = JSON.parse(localStorage.getItem('td_tasks')   || '[]');
+    let courses = USE_API ? [] : JSON.parse(localStorage.getItem('td_courses') || '[]');
+    let tasks   = USE_API ? [] : JSON.parse(localStorage.getItem('td_tasks')   || '[]');
+    let tags    = USE_API ? [] : [];
 
     function save() {
+      if (USE_API) {
+        apiFetch('/api/sync', {
+          method: 'POST',
+          body: JSON.stringify({
+            courses,
+            tags,
+            tasks: tasks.map(t => ({
+              id: t.id,
+              text: t.text,
+              dueDate: t.dueDate || '',
+              courseId: t.courseId || '',
+              category: t.category || '',
+              done: !!t.done,
+              parentId: t.parentId || ''
+            }))
+          })
+        }).then(r => { if (!r.ok) throw new Error('Sync failed'); }).catch(() => {});
+        return;
+      }
       localStorage.setItem('td_courses', JSON.stringify(courses));
       localStorage.setItem('td_tasks',   JSON.stringify(tasks));
     }
@@ -1309,12 +1473,140 @@
     document.getElementById('ovFilterStatus').addEventListener('change', renderOverview);
 
     /* ═══════════════════════════════════════════
+       Auth & Admin (API mode)
+    ═══════════════════════════════════════════ */
+    if (USE_API) {
+      document.getElementById('loginBtn').addEventListener('click', () => showAuthOverlay());
+      document.getElementById('authLoginBtn').addEventListener('click', async () => {
+        const email = document.getElementById('authEmail').value.trim();
+        const password = document.getElementById('authPassword').value;
+        document.getElementById('authError').textContent = '';
+        if (!email || !password) { document.getElementById('authError').textContent = 'Email and password required'; return; }
+        try {
+          const r = await fetch(API_BASE + '/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password }) });
+          const data = await r.json().catch(() => ({}));
+          if (!r.ok) throw new Error(data.error || 'Login failed');
+          setToken(data.token);
+          currentUser = data.user || { email, role: 'user' };
+          await loadDataFromApi();
+          hideAuthOverlay();
+          renderCourses();
+          renderTasks();
+          document.getElementById('authEmail').value = '';
+          document.getElementById('authPassword').value = '';
+        } catch (e) {
+          document.getElementById('authError').textContent = e.message || 'Login failed';
+        }
+      });
+      document.getElementById('authRegisterBtn').addEventListener('click', async () => {
+        const email = document.getElementById('authEmail').value.trim();
+        const password = document.getElementById('authPassword').value;
+        document.getElementById('authError').textContent = '';
+        if (!email || !password) { document.getElementById('authError').textContent = 'Email and password required'; return; }
+        try {
+          const r = await fetch(API_BASE + '/api/auth/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password }) });
+          const data = await r.json().catch(() => ({}));
+          if (!r.ok) throw new Error(data.error || 'Registration failed');
+          setToken(data.token);
+          currentUser = data.user || { email, role: 'user' };
+          await loadDataFromApi();
+          hideAuthOverlay();
+          renderCourses();
+          renderTasks();
+          document.getElementById('authEmail').value = '';
+          document.getElementById('authPassword').value = '';
+        } catch (e) {
+          document.getElementById('authError').textContent = e.message || 'Registration failed';
+        }
+      });
+      document.getElementById('logoutBtn').addEventListener('click', () => {
+        clearToken();
+        currentUser = null;
+        courses = [];
+        tasks = [];
+        tags = [];
+        document.getElementById('authEmail').value = '';
+        document.getElementById('authPassword').value = '';
+        document.getElementById('authError').textContent = '';
+        showAuthOverlay();
+        renderCourses();
+        renderTasks();
+      });
+      document.getElementById('adminBtn').addEventListener('click', () => {
+        document.getElementById('adminPanelOverlay').classList.remove('hidden');
+        document.getElementById('adminStatsResult').innerHTML = '';
+      });
+      document.getElementById('adminPanelCloseBtn').addEventListener('click', () => {
+        document.getElementById('adminPanelOverlay').classList.add('hidden');
+      });
+      document.getElementById('adminPanelOverlay').addEventListener('click', (e) => {
+        if (e.target.id === 'adminPanelOverlay') document.getElementById('adminPanelOverlay').classList.add('hidden');
+      });
+      document.getElementById('adminGetStatsBtn').addEventListener('click', async () => {
+        const resultEl = document.getElementById('adminStatsResult');
+        resultEl.innerHTML = 'Loading…';
+        try {
+          const r = await apiFetch('/api/admin/stats');
+          if (!r.ok) throw new Error('Failed to load stats');
+          const data = await r.json();
+          let html = '<p><strong>Total accounts:</strong> ' + (data.totalAccounts ?? 0) + '</p>';
+          const accounts = data.accounts || [];
+          if (accounts.length > 0) {
+            html += '<table class="stats-table"><thead><tr><th>Email</th><th>Usage</th></tr></thead><tbody>';
+            accounts.forEach(a => {
+              html += '<tr><td>' + escHtml(a.email || '') + '</td><td>' + (a.usageCount ?? 0) + '</td></tr>';
+            });
+            html += '</tbody></table>';
+          } else {
+            html += '<p style="color:#888">No usage data yet.</p>';
+          }
+          resultEl.innerHTML = html;
+        } catch (e) {
+          resultEl.innerHTML = '<p class="error">' + escHtml(e.message || 'Failed to load stats') + '</p>';
+        }
+      });
+    }
+
+    /* ═══════════════════════════════════════════
        Init
     ═══════════════════════════════════════════ */
     document.getElementById('coursesBody').style.maxHeight = 'none';
 
-    renderCourses();
-    renderTasks();
+    async function doAuthInit() {
+      const token = getToken();
+      if (!token) {
+        document.getElementById('authOverlay').classList.add('hidden');
+        document.getElementById('userLogoutWrap').style.display = 'none';
+        document.getElementById('adminBtn').style.display = 'none';
+        document.getElementById('loginBtn').style.display = '';
+        renderCourses();
+        renderTasks();
+        return;
+      }
+      try {
+        const r = await apiFetch('/api/me');
+        if (!r.ok) throw new Error();
+        currentUser = await r.json();
+        await loadDataFromApi();
+        hideAuthOverlay();
+        renderCourses();
+        renderTasks();
+      } catch {
+        showAuthOverlay();
+        renderCourses();
+        renderTasks();
+      }
+    }
+
+    if (USE_API) {
+      doAuthInit();
+    } else {
+      document.getElementById('loginBtn').style.display = 'none';
+      document.getElementById('userLogoutWrap').style.display = 'none';
+      document.getElementById('adminBtn').style.display = 'none';
+      renderCourses();
+      renderTasks();
+    }
   </script>
 </body>
 </html>
