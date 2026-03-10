@@ -799,7 +799,8 @@
       flex-shrink: 0;
     }
 
-    .overview-sort-row input[type="text"] {
+    .overview-sort-row input[type="text"],
+    .overview-sort-row input[type="date"] {
       width: 120px;
       min-width: 80px;
       font-size: 0.82rem;
@@ -1382,10 +1383,14 @@
           <select id="ovFilterDate">
             <option value="">All</option>
             <option value="overdue">Overdue</option>
-            <option value="today">Due Today</option>
+            <option value="today">Today</option>
+            <option value="tomorrow">Tomorrow</option>
+            <option value="week">This Week</option>
+            <option value="date">Specific Date</option>
             <option value="future">Upcoming</option>
             <option value="none">No Date</option>
           </select>
+          <input type="date" id="ovFilterDateSpecific" title="Select date" style="display:none">
           <label for="ovFilterStatus">Status:</label>
           <select id="ovFilterStatus">
             <option value="">All</option>
@@ -1524,6 +1529,7 @@
         filterTag: document.getElementById('ovFilterTag')?.value || '',
         filterTask: document.getElementById('ovFilterTask')?.value || '',
         filterDate: document.getElementById('ovFilterDate')?.value || '',
+        filterDateSpecific: document.getElementById('ovFilterDateSpecific')?.value || '',
         filterStatus: document.getElementById('ovFilterStatus')?.value || '',
         filterSubtasks: document.getElementById('ovFilterSubtasks')?.value || '',
         overviewVisible: typeof overviewVisible !== 'undefined' ? overviewVisible : true,
@@ -1563,6 +1569,12 @@
       if (ft && prefs.filterTag !== undefined) ft.value = prefs.filterTag;
       if (ftask && prefs.filterTask !== undefined) ftask.value = prefs.filterTask;
       if (fdate && prefs.filterDate !== undefined) fdate.value = prefs.filterDate;
+      const fdateSpecific = document.getElementById('ovFilterDateSpecific');
+      if (fdateSpecific) {
+        if (prefs.filterDateSpecific !== undefined) fdateSpecific.value = prefs.filterDateSpecific;
+        else if (fdate?.value === 'date' && !fdateSpecific.value) fdateSpecific.value = todayStr();
+        fdateSpecific.style.display = (fdate?.value === 'date') ? '' : 'none';
+      }
       if (fstatus && prefs.filterStatus !== undefined) fstatus.value = prefs.filterStatus;
       const fsub = document.getElementById('ovFilterSubtasks');
       if (fsub && prefs.filterSubtasks !== undefined) fsub.value = prefs.filterSubtasks;
@@ -1658,6 +1670,20 @@
     ═══════════════════════════════════════════ */
     function todayStr() {
       const d = new Date();
+      return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    }
+
+    function tomorrowStr() {
+      const d = new Date();
+      d.setDate(d.getDate() + 1);
+      return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    }
+
+    function endOfWeekStr() {
+      const d = new Date();
+      const day = d.getDay();
+      const toSaturday = (6 - day + 7) % 7;
+      d.setDate(d.getDate() + toSaturday);
       return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
     }
 
@@ -1943,10 +1969,17 @@
         if (filterTask && !t.text.toLowerCase().includes(filterTask)) return false;
         if (filterDate) {
           const sev = dueSeverity(t.dueDate);
+          const today = todayStr();
+          const tomorrow = tomorrowStr();
+          const endWeek = endOfWeekStr();
+          const filterDateSpecific = document.getElementById('ovFilterDateSpecific')?.value || '';
           if (filterDate === 'overdue' && sev !== 'overdue') return false;
-          if (filterDate === 'today'   && sev !== 'today')   return false;
-          if (filterDate === 'future'  && sev !== 'future')  return false;
-          if (filterDate === 'none'    && t.dueDate)          return false;
+          if (filterDate === 'today'   && t.dueDate !== today) return false;
+          if (filterDate === 'tomorrow' && t.dueDate !== tomorrow) return false;
+          if (filterDate === 'week'    && (!t.dueDate || t.dueDate < today || t.dueDate > endWeek)) return false;
+          if (filterDate === 'date'    && t.dueDate !== filterDateSpecific) return false;
+          if (filterDate === 'future'  && sev !== 'future') return false;
+          if (filterDate === 'none'    && t.dueDate) return false;
         }
         return true;
       };
@@ -2566,7 +2599,7 @@
     const CELEBRATION_GIFS_CCJ = [
       { url: POOH_GIF,   text: '🍯 Task Complete! 🍯', sub: 'Oh bother… you did it! ✨' }
     ];
-    const PUPPY_CELEBRATION = { url: PUPPY_GIF, text: '🐕 Task Complete! 🐕', sub: 'Good walk! Roger says great job! ✨' };
+    const PUPPY_CELEBRATION = { url: PUPPY_GIF, text: 'Puppy says Thank You!!', sub: '🐕' };
     const CARDS_CELEBRATION = { url: CARDS_GIF, text: '🃏 Task Complete! 🃏', sub: 'Winning hand! 🎊' };
     // Fallback GIFs for other users (if GIF_ENABLED_EMAIL is set for them)
     const CELEBRATION_GIFS = [
@@ -2806,7 +2839,15 @@
     document.getElementById('ovFilterCategory').addEventListener('change', () => { savePreferencesToStorage(); renderOverview(); });
     document.getElementById('ovFilterTag').addEventListener('change', () => { savePreferencesToStorage(); renderOverview(); });
     document.getElementById('ovFilterTask').addEventListener('input', () => { savePreferencesToStorage(); renderOverview(); });
-    document.getElementById('ovFilterDate').addEventListener('change', () => { savePreferencesToStorage(); renderOverview(); });
+    document.getElementById('ovFilterDate').addEventListener('change', () => {
+      const sel = document.getElementById('ovFilterDate');
+      const inp = document.getElementById('ovFilterDateSpecific');
+      if (inp) inp.style.display = (sel.value === 'date') ? '' : 'none';
+      if (sel.value === 'date' && inp && !inp.value) inp.value = todayStr();
+      savePreferencesToStorage();
+      renderOverview();
+    });
+    document.getElementById('ovFilterDateSpecific').addEventListener('change', () => { savePreferencesToStorage(); renderOverview(); });
     document.getElementById('ovFilterStatus').addEventListener('change', () => { savePreferencesToStorage(); renderOverview(); });
     const ovFilterSubtasks = document.getElementById('ovFilterSubtasks');
     if (ovFilterSubtasks) ovFilterSubtasks.addEventListener('change', () => { savePreferencesToStorage(); renderOverview(); });
