@@ -30,6 +30,7 @@ if (usePostgres) {
     CREATE TABLE IF NOT EXISTS usage_log (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id TEXT NOT NULL, created_at TEXT DEFAULT (datetime('now')));
     CREATE INDEX IF NOT EXISTS idx_usage_log_user ON usage_log(user_id);
   `);
+  try { sqlite.exec("ALTER TABLE users ADD COLUMN role TEXT DEFAULT 'user'"); } catch(e) { /* column may exist */ }
   const txDb = {
     get: (s, ...p) => Promise.resolve(sqlite.prepare(s).get(...p)),
     all: (s, ...p) => Promise.resolve(sqlite.prepare(s).all(...p)),

@@ -52,8 +52,10 @@ async function init() {
         id TEXT PRIMARY KEY,
         email TEXT UNIQUE NOT NULL,
         password_hash TEXT NOT NULL,
+        role TEXT DEFAULT 'user',
         created_at TIMESTAMPTZ DEFAULT NOW()
       );
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS role TEXT DEFAULT 'user';
       CREATE TABLE IF NOT EXISTS courses (
         id TEXT PRIMARY KEY,
         user_id TEXT NOT NULL,

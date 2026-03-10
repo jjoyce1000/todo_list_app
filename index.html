@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>To-Do List</title>
   <style>
     * { box-sizing: border-box; }
@@ -70,54 +70,26 @@
       white-space: nowrap;
     }
 
-      .reset-btn:hover {
+    .reset-btn:hover {
       background: #e74c3c;
       color: white;
     }
 
-    .auth-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.5);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 9999;
-    }
-    .auth-overlay.hidden { display: none; }
-    .auth-box {
-      background: white;
-      padding: 1.5rem 2rem;
-      border-radius: 10px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.2);
-      min-width: 280px;
-    }
-    .auth-box h2 { margin: 0 0 1rem; font-size: 1.2rem; }
-    .auth-box .field { margin-bottom: 0.75rem; }
-    .auth-box .field label { display: block; font-size: 0.85rem; margin-bottom: 0.25rem; }
-    .auth-box .field input { width: 100%; padding: 0.5rem; }
-    .auth-box .auth-actions { display: flex; gap: 0.5rem; margin-top: 1rem; }
-    .auth-box .auth-error { color: #e74c3c; font-size: 0.85rem; margin-top: 0.5rem; }
-    .logout-btn {
+    .admin-link {
       padding: 0.45rem 0.9rem;
-      border: 1.5px solid #666;
+      border: 1.5px solid #7f8c8d;
       border-radius: 7px;
       background: white;
-      color: #333;
+      color: #7f8c8d;
       font-size: 0.85rem;
-      cursor: pointer;
+      font-weight: 600;
+      text-decoration: none;
+      white-space: nowrap;
+      transition: background 0.15s, color 0.15s;
     }
-    .logout-btn:hover { background: #eee; }
-    .user-logout-wrap {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-end;
-      gap: 0.2rem;
-    }
-    .user-email-display {
-      font-size: 0.8rem;
-      color: #444;
-      line-height: 1.2;
+    .admin-link:hover {
+      background: #7f8c8d;
+      color: white;
     }
 
     /* ── Two-pane layout ── */
@@ -135,73 +107,6 @@
       justify-content: center;
     }
 
-    .app-wrapper.left-panel-collapsed {
-      grid-template-columns: 36px 1fr;
-    }
-
-    .app-wrapper.left-panel-collapsed.overview-hidden {
-      grid-template-columns: 36px 520px;
-      justify-content: start;
-    }
-
-    .left-pane {
-      position: relative;
-      transition: min-width 0.25s ease;
-    }
-
-    .left-panel-inner {
-      min-width: 332px;
-      transition: opacity 0.2s ease, transform 0.2s ease;
-    }
-
-    .left-pane.collapsed .left-panel-inner {
-      position: absolute;
-      left: 0;
-      top: 0;
-      opacity: 0;
-      pointer-events: none;
-      transform: translateX(-12px);
-    }
-
-    .left-panel-toggle {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 32px;
-      min-height: 32px;
-      border: none;
-      border-radius: 6px;
-      background: #4a90d9;
-      color: white;
-      font-size: 0.75rem;
-      cursor: pointer;
-      box-shadow: 0 1px 4px rgba(74,144,217,0.3);
-      transition: background 0.15s, transform 0.1s;
-      flex-shrink: 0;
-    }
-
-    .left-panel-toggle:hover { background: #3a7bc8; }
-    .left-panel-toggle:active { transform: scale(0.95); }
-
-    .left-pane.collapsed .left-panel-toggle {
-      writing-mode: vertical-rl;
-      text-orientation: mixed;
-      padding: 0.4rem 0.25rem;
-      font-size: 0.65rem;
-      font-weight: 600;
-      letter-spacing: 0.06em;
-    }
-
-    .left-pane:not(.collapsed) .left-panel-toggle {
-      margin-bottom: 0.4rem;
-      width: 100%;
-      background: #e0e0e0;
-      color: #555;
-      font-size: 0.78rem;
-    }
-
-    .left-pane:not(.collapsed) .left-panel-toggle:hover { background: #d0d0d0; }
-
     .right-pane {
       position: sticky;
       top: 1.5rem;
@@ -217,150 +122,6 @@
       .right-pane { position: static; }
       .header-actions { position: static; }
       .page-header { flex-wrap: wrap; }
-    }
-
-    /* ── Mobile optimizations ── */
-    @media (max-width: 600px) {
-      body {
-        padding: 0.75rem 0.75rem;
-        padding-bottom: env(safe-area-inset-bottom, 0.75rem);
-      }
-      .page-header {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 0.75rem;
-        margin-bottom: 1rem;
-      }
-      .page-header h1 {
-        font-size: 1.4rem;
-        text-align: center;
-      }
-      .header-actions {
-        justify-content: center;
-        flex-wrap: wrap;
-      }
-      .header-actions button {
-        flex: 1;
-        min-width: 120px;
-      }
-      .app-wrapper {
-        gap: 0.75rem;
-        max-width: none;
-      }
-      .app-wrapper.left-panel-collapsed,
-      .app-wrapper.left-panel-collapsed.overview-hidden {
-        grid-template-columns: 1fr;
-      }
-      .left-panel-inner {
-        min-width: 0;
-      }
-      .card {
-        padding: 0.9rem 1rem;
-        margin-bottom: 0.75rem;
-      }
-      .card-title { font-size: 0.95rem; }
-      .form-row {
-        grid-template-columns: 1fr;
-      }
-      .stats-bar {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 0.4rem;
-        margin-bottom: 0.75rem;
-      }
-      .stat-cell {
-        padding: 0.45rem 0.4rem;
-      }
-      .stat-num { font-size: 1.2rem; }
-      .stat-label { font-size: 0.65rem; }
-      .overview-sort-row {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 0.5rem;
-      }
-      .overview-sort-row label {
-        display: block;
-        margin: 0.5rem 0 0.2rem;
-      }
-      .overview-sort-row label:first-child { margin-top: 0; }
-      .overview-sort-row select {
-        width: 100%;
-        min-height: 44px;
-        font-size: 1rem;
-      }
-      .ov-controls-divider { display: none; }
-      .bulk-update-bar {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 0.5rem;
-        padding: 0.6rem 0.75rem;
-      }
-      .bulk-update-bar label { margin-bottom: 0.15rem; }
-      .bulk-update-bar input[type="text"],
-      .bulk-update-bar input[type="date"],
-      .bulk-update-bar select {
-        min-width: 0;
-        min-height: 44px;
-      }
-      .bulk-update-bar .bulk-apply-btn,
-      .bulk-update-bar .bulk-clear-btn {
-        min-height: 44px;
-      }
-      .overview-table-wrap {
-        margin: 0 -1rem;
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-      }
-      .overview-table {
-        font-size: 0.8rem;
-        min-width: 520px;
-      }
-      .overview-table thead th,
-      .overview-table tbody td {
-        padding: 0.45rem 0.5rem;
-      }
-      .ov-task-text { font-size: 0.85rem; }
-      .ov-expand-btn,
-      .ov-add-subtask-btn {
-        min-width: 36px;
-        min-height: 36px;
-      }
-      .ov-actions-cell button {
-        min-height: 36px;
-        padding: 0.35rem 0.6rem;
-      }
-      .ov-select-cell input[type="checkbox"] {
-        width: 22px;
-        height: 22px;
-      }
-      .status-pill {
-        min-height: 36px;
-        padding: 0.35rem 0.75rem;
-      }
-      input[type="text"],
-      input[type="date"],
-      select,
-      textarea {
-        min-height: 44px;
-        font-size: 1rem;
-      }
-      .btn-primary, .btn-danger, .btn-sm {
-        min-height: 44px;
-        padding: 0.5rem 1rem;
-      }
-      .edit-modal {
-        width: calc(100% - 2rem);
-        max-width: none;
-        margin: 1rem;
-        max-height: calc(100vh - 2rem);
-        overflow-y: auto;
-      }
-      #poohContainer {
-        padding: 1rem 1.25rem;
-        margin: 1rem;
-      }
-      #poohGif { width: min(280px, 85vw); }
-      .pooh-text { font-size: 1.4rem; }
-      .pooh-sub { font-size: 0.9rem; }
     }
 
     /* ── Cards ── */
@@ -574,13 +335,6 @@
       text-align: center;
     }
 
-    .pooh-dog-icon {
-      height: 1.4em;
-      width: auto;
-      vertical-align: middle;
-      filter: drop-shadow(0 1px 2px rgba(0,0,0,0.4));
-    }
-
     .pooh-dismiss-hint {
       font-size: 0.72rem;
       color: rgba(255,255,255,0.45);
@@ -613,7 +367,7 @@
       100% { transform: scale(1) translateY(0); opacity: 1; }
     }
 
-    /* ── Categories list ── */
+    /* ── Courses list ── */
     #coursesList {
       max-height: 200px;
       overflow-y: auto;
@@ -635,32 +389,9 @@
       border-left: 4px solid #ccc;
     }
 
-    .course-info { flex: 1; min-width: 0; }
+    .course-info { flex: 1; }
     .course-name { font-weight: 600; font-size: 0.95rem; }
-    input[type="color"] { cursor: pointer; height: 32px; padding: 2px; border-radius: 6px; }
     .course-desc { font-size: 0.82rem; color: #666; margin-top: 0.15rem; }
-
-    /* ── Tags list ── */
-    #tagsList {
-      max-height: 160px;
-      overflow-y: auto;
-      padding-right: 2px;
-    }
-    #tagsList::-webkit-scrollbar { width: 5px; }
-    #tagsList::-webkit-scrollbar-track { background: transparent; }
-    #tagsList::-webkit-scrollbar-thumb { background: #d0d4dc; border-radius: 99px; }
-    .tag-item {
-      display: flex;
-      align-items: center;
-      gap: 0.6rem;
-      padding: 0.5rem 0.75rem;
-      border-radius: 7px;
-      margin-bottom: 0.4rem;
-      background: #f7f8fa;
-      border-left: 4px solid #ccc;
-    }
-    .tag-info { flex: 1; min-width: 0; }
-    .tag-name { font-weight: 600; font-size: 0.9rem; }
 
     /* ── Task list ── */
     ul { list-style: none; padding: 0; margin: 0; }
@@ -709,39 +440,6 @@
       color: white;
       white-space: nowrap;
     }
-    .badge-neutral {
-      background: #7f8c8d !important;
-      color: #fff;
-    }
-
-    .ov-course-clickable,
-    .ov-tag-clickable {
-      cursor: pointer;
-      display: inline-block;
-      min-width: 1.5rem;
-      border-radius: 4px;
-      padding: 0.1rem 0.2rem;
-      margin: -0.1rem -0.2rem;
-    }
-    tbody tr.row-open .ov-course-clickable:hover,
-    tbody tr.row-open .ov-tag-clickable:hover { background: rgba(0,0,0,0.06); }
-    tbody tr.row-done .ov-course-clickable:hover,
-    tbody tr.row-done .ov-tag-clickable:hover,
-    tbody tr.row-today .ov-course-clickable:hover,
-    tbody tr.row-today .ov-tag-clickable:hover,
-    tbody tr.row-overdue .ov-course-clickable:hover,
-    tbody tr.row-overdue .ov-tag-clickable:hover { background: rgba(255,255,255,0.15); }
-
-    .ov-course-select,
-    .ov-tag-select {
-      width: 100%;
-      max-width: 140px;
-      font-size: 0.8rem;
-      padding: 0.2rem 0.4rem;
-      border-radius: 4px;
-      border: 1px solid rgba(0,0,0,0.2);
-      background: #fff;
-    }
 
     .due-chip {
       display: inline-flex;
@@ -756,8 +454,8 @@
       white-space: nowrap;
     }
 
-    .due-chip.overdue { background: #f3e5f5; color: #8e44ad; }
-    .due-chip.today   { background: #fdecea; color: #c0392b; }
+    .due-chip.overdue { background: #fdecea; color: #c0392b; }
+    .due-chip.today   { background: #fff4e5; color: #d97706; }
 
     /* ── Filters ── */
     .filters {
@@ -837,8 +535,8 @@
       margin-top: 0.2rem;
     }
 
-    .stat-cell.stat-overdue .stat-num { color: #8e44ad; }
-    .stat-cell.stat-today   .stat-num { color: #c0392b; }
+    .stat-cell.stat-overdue .stat-num { color: #c0392b; }
+    .stat-cell.stat-today   .stat-num { color: #d97706; }
     .stat-cell.stat-open    .stat-num { color: #4a90d9; }
     .stat-cell.stat-done    .stat-num { color: #27ae60; }
 
@@ -874,82 +572,19 @@
       flex-shrink: 0;
     }
 
-    /* Bulk update bar */
-    .bulk-update-bar {
-      display: none;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 0.6rem;
-      padding: 0.75rem 1rem;
-      margin-bottom: 0.75rem;
-      background: linear-gradient(135deg, #e8f4fc 0%, #f0f7fc 100%);
-      border: 1px solid #b8d4e8;
-      border-radius: 8px;
-      font-size: 0.88rem;
-    }
-
-    .bulk-update-bar.visible { display: flex; }
-
-    .bulk-update-bar .bulk-label { font-weight: 600; color: #2c5f8d; margin-right: 0.25rem; }
-
-    .bulk-update-bar input[type="text"],
-    .bulk-update-bar input[type="date"],
-    .bulk-update-bar select {
-      padding: 0.35rem 0.5rem;
-      font-size: 0.82rem;
-      border-radius: 5px;
-      border: 1px solid #b8d4e8;
-      min-width: 100px;
-    }
-
-    .bulk-update-bar .bulk-apply-btn {
-      padding: 0.4rem 0.9rem;
-      background: #2980b9;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      font-weight: 600;
-      font-size: 0.82rem;
-      cursor: pointer;
-    }
-
-    .bulk-update-bar .bulk-apply-btn:hover { background: #1f6dad; }
-
-    .bulk-update-bar .bulk-clear-btn {
-      padding: 0.35rem 0.6rem;
-      background: transparent;
-      border: 1px solid #999;
-      color: #666;
-      border-radius: 5px;
-      font-size: 0.78rem;
-      cursor: pointer;
-    }
-
-    .bulk-update-bar .bulk-clear-btn:hover { background: #eee; }
-
-    .ov-select-cell { width: 2rem; text-align: center; vertical-align: middle; }
-
-    .ov-select-cell input[type="checkbox"] {
-      width: 16px;
-      height: 16px;
-      accent-color: #2980b9;
-      cursor: pointer;
-    }
-
     /* Overview table */
     .overview-table-wrap {
       overflow-x: auto;
       margin: 0 -0.25rem;
     }
 
-    .overview-table {
+    table {
       width: 100%;
       border-collapse: collapse;
       font-size: 0.875rem;
-      table-layout: fixed;
     }
 
-    .overview-table thead th {
+    thead th {
       text-align: left;
       padding: 0.55rem 0.6rem;
       font-size: 0.75rem;
@@ -959,49 +594,20 @@
       color: #666;
       border-bottom: 2px solid #eee;
       white-space: nowrap;
+      cursor: pointer;
       user-select: none;
       position: relative;
     }
 
-    .overview-table thead th[data-col] { cursor: grab; }
-    .overview-table thead th[data-col]:active { cursor: grabbing; }
-    .overview-table thead th.ov-select-cell,
-    .overview-table thead th:last-child { cursor: default; }
+    thead th:hover { color: #333; }
 
-    .overview-table thead th:hover { color: #333; }
-
-    .overview-table thead th.resizable {
-      position: relative;
-      padding-right: 1.2rem;
-    }
-
-    .overview-table thead th .col-resizer {
-      position: absolute;
-      top: 0;
-      right: 0;
-      width: 6px;
-      height: 100%;
-      cursor: col-resize;
-      user-select: none;
-    }
-
-    .overview-table thead th .col-resizer:hover,
-    .overview-table thead th.resizing .col-resizer {
-      background: rgba(74,144,217,0.2);
-    }
-
-    .overview-table thead th.drag-over {
-      box-shadow: inset 0 0 0 2px #4a90d9;
-      background: rgba(74,144,217,0.08);
-    }
-
-    .overview-table thead th .sort-arrow {
+    thead th .sort-arrow {
       margin-left: 0.25rem;
       opacity: 0.4;
       font-size: 0.7rem;
     }
 
-    .overview-table thead th.sorted .sort-arrow { opacity: 1; color: #4a90d9; }
+    thead th.sorted .sort-arrow { opacity: 1; color: #4a90d9; }
 
     tbody tr {
       border-bottom: 1px solid #f2f2f2;
@@ -1027,21 +633,21 @@
     }
     tbody tr.row-done:hover { background: #197a40; }
 
-    /* Due Today — red */
+    /* Due Today — orange */
     tbody tr.row-today {
+      background: #e07b00;
+      border-bottom-color: #c56d00;
+      color: #fff;
+    }
+    tbody tr.row-today:hover { background: #c56d00; }
+
+    /* Overdue — red */
+    tbody tr.row-overdue {
       background: #c0392b;
       border-bottom-color: #a93226;
       color: #fff;
     }
-    tbody tr.row-today:hover { background: #a93226; }
-
-    /* Past Due — purple */
-    tbody tr.row-overdue {
-      background: #8e44ad;
-      border-bottom-color: #7d3c98;
-      color: #fff;
-    }
-    tbody tr.row-overdue:hover { background: #7d3c98; }
+    tbody tr.row-overdue:hover { background: #a93226; }
 
     tbody td {
       padding: 0.55rem 0.6rem;
@@ -1050,73 +656,23 @@
 
     .ov-task-text {
       font-weight: 500;
+      max-width: 180px;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
     }
-
-    .ov-task-cell { display: flex; align-items: center; gap: 0.35rem; }
-    .ov-expand-btn {
-      width: 18px; height: 18px;
-      display: inline-flex; align-items: center; justify-content: center;
-      border: none; background: transparent; cursor: pointer;
-      font-size: 0.65rem; color: #666; padding: 0;
-      flex-shrink: 0;
-    }
-    .ov-expand-btn:hover { color: #333; background: rgba(0,0,0,0.06); border-radius: 4px; }
-    .ov-add-subtask-btn {
-      width: 20px; height: 20px;
-      display: inline-flex; align-items: center; justify-content: center;
-      border: none; background: rgba(74,144,217,0.2); color: #4a90d9;
-      border-radius: 4px; cursor: pointer; font-size: 1rem; line-height: 1;
-      padding: 0; flex-shrink: 0;
-    }
-    .ov-add-subtask-btn:hover { background: rgba(74,144,217,0.35); color: #3a7bc8; }
-    tbody tr.row-done .ov-add-subtask-btn,
-    tbody tr.row-today .ov-add-subtask-btn,
-    tbody tr.row-overdue .ov-add-subtask-btn {
-      background: rgba(255,255,255,0.3); color: rgba(255,255,255,0.95);
-    }
-    tbody tr.row-done .ov-add-subtask-btn:hover,
-    tbody tr.row-today .ov-add-subtask-btn:hover,
-    tbody tr.row-overdue .ov-add-subtask-btn:hover {
-      background: rgba(255,255,255,0.5); color: #fff;
-    }
-    .ov-subtask-icon {
-      font-size: 0.9rem; opacity: 0.85; flex-shrink: 0;
-      cursor: default;
-    }
-    .ov-add-subtask-row td { padding: 0.35rem 0.6rem; background: rgba(0,0,0,0.03); }
-    .ov-add-subtask-row input[type="text"] {
-      width: 100%; max-width: 280px; padding: 0.3rem 0.5rem;
-      font-size: 0.85rem; border: 1px solid #ccc; border-radius: 5px;
-    }
-    .ov-add-subtask-row input[type="text"]::placeholder { color: #999; }
-    tr.ov-subtask-row .ov-task-cell { padding-left: 1.5rem; }
-    tr.ov-subtask-row .ov-task-cell .ov-subtask-indent { width: 1rem; flex-shrink: 0; }
 
     tbody tr.row-done .ov-task-text {
       text-decoration: line-through;
       color: rgba(255,255,255,0.75);
     }
 
-    /* Colored rows: keep all text legible on dark backgrounds */
+    /* Colored rows: keep dates legible on dark backgrounds */
     tbody tr.row-done .ov-date,
     tbody tr.row-today .ov-date,
-    tbody tr.row-overdue .ov-date { color: rgba(255,255,255,0.95); }
+    tbody tr.row-overdue .ov-date { color: rgba(255,255,255,0.9); }
 
-    tbody tr.row-open .ov-date { color: #333; }
-
-    tbody tr.row-done .ov-category,
-    tbody tr.row-today .ov-category,
-    tbody tr.row-overdue .ov-category { color: rgba(255,255,255,0.95); }
-
-    tbody tr.row-done .ov-muted,
-    tbody tr.row-today .ov-muted,
-    tbody tr.row-overdue .ov-muted { color: rgba(255,255,255,0.75); }
-
-    tbody tr.row-open .ov-category { color: #333; }
-    tbody tr.row-open .ov-muted { color: #888; }
+    tbody tr.row-open .ov-date { color: #555; }
 
     tbody tr.row-open span[style],
     tbody tr.row-done span[style],
@@ -1126,21 +682,11 @@
     .ov-date {
       white-space: nowrap;
       font-size: 0.82rem;
-      color: #333;
+      color: #555;
     }
 
-    .ov-category {
-      font-size: 0.82rem;
-      color: #333;
-    }
-
-    .ov-muted {
-      font-size: 0.82rem;
-      color: #888;
-    }
-
-    tbody tr.row-open .ov-date.overdue { color: #8e44ad; font-weight: 600; }
-    tbody tr.row-open .ov-date.today   { color: #c0392b; font-weight: 600; }
+    .ov-date.overdue { color: #c0392b; font-weight: 600; }
+    .ov-date.today   { color: #d97706; font-weight: 600; }
 
     /* Status pill */
     .status-pill {
@@ -1157,20 +703,6 @@
     .status-pill:hover { opacity: 0.8; transform: scale(0.96); }
     .status-pill.open  { background: #e8f0fb; color: #2c6fad; }
     .status-pill.done  { background: #e6f9ef; color: #1e7e4c; }
-
-    /* On colored rows, ensure status pill remains readable */
-    tbody tr.row-done .status-pill.open,
-    tbody tr.row-today .status-pill.open,
-    tbody tr.row-overdue .status-pill.open {
-      background: rgba(255,255,255,0.95);
-      color: #1a5a8a;
-    }
-    tbody tr.row-done .status-pill.done,
-    tbody tr.row-today .status-pill.done,
-    tbody tr.row-overdue .status-pill.done {
-      background: rgba(255,255,255,0.95);
-      color: #0d5c2e;
-    }
 
     .ov-remove-btn {
       background: transparent;
@@ -1209,248 +741,42 @@
       padding: 1.5rem;
       font-size: 0.9rem;
     }
-
-    .ov-actions-cell {
-      display: flex;
-      gap: 0.35rem;
-      align-items: center;
-    }
-
-    .ov-edit-btn {
-      background: transparent;
-      border: 1.5px solid rgba(255,255,255,0.45);
-      color: rgba(255,255,255,0.85);
-      border-radius: 5px;
-      padding: 0.18rem 0.4rem;
-      font-size: 0.75rem;
-      font-weight: 600;
-      cursor: pointer;
-      line-height: 1;
-      transition: background 0.15s, border-color 0.15s;
-    }
-
-    .ov-edit-btn:hover { background: rgba(255,255,255,0.2); }
-
-    tbody tr.row-open .ov-edit-btn {
-      border-color: rgba(0,0,0,0.25);
-      color: rgba(0,0,0,0.55);
-    }
-
-    tbody tr.row-open .ov-edit-btn:hover { background: rgba(0,0,0,0.06); color: #333; }
-
-    .ov-undo-btn {
-      background: #27ae60;
-      color: #fff;
-      border: none;
-      border-radius: 5px;
-      padding: 0.18rem 0.45rem;
-      font-size: 0.75rem;
-      font-weight: 600;
-      cursor: pointer;
-      line-height: 1;
-    }
-
-    .ov-undo-btn:hover { background: #2ecc71; }
-
-    tbody tr.row-pending-removal {
-      opacity: 0.6;
-      background: #f5f5f5 !important;
-    }
-
-    tbody tr.row-pending-removal td { color: #888 !important; }
-
-    /* Edit modal */
-    .edit-modal-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.45);
-      z-index: 10001;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.2s ease;
-    }
-
-    .edit-modal-overlay.visible {
-      opacity: 1;
-      pointer-events: auto;
-    }
-
-    .edit-modal {
-      background: white;
-      border-radius: 12px;
-      padding: 1.5rem 1.75rem;
-      min-width: 320px;
-      max-width: 90vw;
-      box-shadow: 0 12px 48px rgba(0,0,0,0.25);
-    }
-
-    .edit-modal h3 { margin: 0 0 1rem; font-size: 1.15rem; color: #333; }
-
-    .edit-modal .field { margin-bottom: 0.85rem; }
-
-    .edit-modal .modal-actions {
-      display: flex;
-      gap: 0.5rem;
-      justify-content: flex-end;
-      margin-top: 1.1rem;
-    }
-
-    .edit-cancel-btn {
-      padding: 0.5rem 1rem;
-      border: 1px solid #ccc;
-      border-radius: 7px;
-      background: #fff;
-      color: #555;
-      font-size: 0.9rem;
-      font-weight: 600;
-      cursor: pointer;
-    }
-
-    .edit-cancel-btn:hover { background: #f5f5f5; }
-
-    #importCsvBtn,
-      .toggle-overview-btn,
-      .reset-btn {
-        min-height: 44px;
-      }
-      .import-csv-btn {
-      padding: 0.45rem 0.9rem;
-      border: 1.5px solid #27ae60;
-      border-radius: 7px;
-      background: white;
-      color: #27ae60;
-      font-size: 0.85rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: background 0.15s, color 0.15s;
-    }
-
-    .import-csv-btn:hover {
-      background: #27ae60;
-      color: white;
-    }
   </style>
 </head>
 <body>
 
-  <div class="auth-overlay hidden" id="authOverlay">
-    <div class="auth-box">
-      <h2>Sign in</h2>
-      <div class="field">
-        <label for="authEmail">Email</label>
-        <input type="email" id="authEmail" placeholder="you@example.com">
-      </div>
-      <div class="field">
-        <label for="authPassword">Password</label>
-        <input type="password" id="authPassword" placeholder="••••••••">
-      </div>
-      <div class="auth-error" id="authError"></div>
-      <div class="auth-actions">
-        <button class="btn-primary" id="authLoginBtn">Log in</button>
-        <button class="toggle-overview-btn" id="authRegisterBtn">Register</button>
-      </div>
-    </div>
-  </div>
-
   <div class="page-header">
     <h1>📋 To-Do List</h1>
     <div class="header-actions">
-      <div class="user-logout-wrap" id="userLogoutWrap" style="display:none">
-        <span class="user-email-display" id="userEmailDisplay"></span>
-        <button class="logout-btn" id="logoutBtn">Log out</button>
-      </div>
-      <button class="import-csv-btn" id="importCsvBtn">📥 Import CSV</button>
-      <input type="file" id="csvFileInput" accept=".csv" style="display:none">
+      <a href="/admin" class="admin-link" title="Admin – usage stats">Admin</a>
       <button class="toggle-overview-btn" id="toggleOverviewBtn">Hide Overview</button>
       <button class="reset-btn" id="resetBtn">🗑 Reset All Tasks</button>
-    </div>
-  </div>
-
-  <div class="edit-modal-overlay" id="editModalOverlay">
-    <div class="edit-modal">
-      <h3>Edit Task</h3>
-      <div class="field">
-        <label for="editTaskText">Task</label>
-        <input type="text" id="editTaskText" placeholder="Task description">
-      </div>
-      <div class="field">
-        <label for="editTaskCourse">Category</label>
-        <select id="editTaskCourse">
-          <option value="">— No category —</option>
-        </select>
-      </div>
-      <div class="field">
-        <label for="editTaskDue">Due Date</label>
-        <input type="date" id="editTaskDue">
-      </div>
-      <div class="field">
-        <label for="editTaskCategory">Tag</label>
-        <select id="editTaskCategory">
-          <option value="">— None —</option>
-        </select>
-      </div>
-      <div class="field">
-        <label for="editTaskStatus">Status</label>
-        <select id="editTaskStatus">
-          <option value="open">Open</option>
-          <option value="done">Complete</option>
-        </select>
-      </div>
-      <div class="modal-actions">
-        <button class="edit-cancel-btn" id="editModalCancel">Cancel</button>
-        <button class="btn-primary" id="editModalSave">Save</button>
-      </div>
     </div>
   </div>
 
   <div class="app-wrapper" id="appWrapper">
 
     <!-- ══════════════ LEFT PANE ══════════════ -->
-    <div class="left-pane" id="leftPane">
-      <button class="left-panel-toggle" id="leftPanelToggle" title="Collapse panel">◀ Collapse</button>
-      <div class="left-panel-inner">
-      <!-- Categories Manager -->
+    <div class="left-pane">
+
+      <!-- Courses Manager -->
       <div class="card" id="coursesCard">
         <div class="card-title" id="coursesToggle">
-          <span>🎓 Categories</span>
+          <span>🎓 Courses</span>
           <span class="toggle-icon">▼</span>
         </div>
         <div class="collapsible-body" id="coursesBody">
           <div id="coursesList"></div>
-          <div class="section-label">Add a Category</div>
+          <div class="section-label">Add a Course</div>
           <div class="field">
-            <label for="courseName">Category Name</label>
-            <input type="text" id="courseName" placeholder="e.g. School, Exercise, Personal">
+            <label for="courseName">Course Name</label>
+            <input type="text" id="courseName" placeholder="e.g. Calculus II">
           </div>
           <div class="field">
             <label for="courseDesc">Description</label>
             <textarea id="courseDesc" placeholder="Professor, section number, notes…"></textarea>
           </div>
-          <button class="btn-primary btn-full" id="addCourseBtn">Add Category</button>
-        </div>
-      </div>
-
-      <!-- Tags Manager -->
-      <div class="card" id="tagsCard">
-        <div class="card-title" id="tagsToggle">
-          <span>🏷️ Tags</span>
-          <span class="toggle-icon">▼</span>
-        </div>
-        <div class="collapsible-body" id="tagsBody">
-          <div id="tagsList"></div>
-          <div class="section-label">Add a Tag</div>
-          <div class="field">
-            <label for="tagName">Tag Name</label>
-            <input type="text" id="tagName" placeholder="e.g. Course Name, Exercise Activity, Personal Activity">
-          </div>
-          <div class="field">
-            <label for="tagColor">Color</label>
-            <input type="color" id="tagColor" value="#4a90d9" title="Tag color">
-          </div>
-          <button class="btn-primary btn-full" id="addTagBtn">Add Tag</button>
+          <button class="btn-primary btn-full" id="addCourseBtn">Add Course</button>
         </div>
       </div>
 
@@ -1458,12 +784,6 @@
       <div class="card">
         <div class="card-title" style="cursor:default;">
           <span>➕ Add Task</span>
-        </div>
-        <div class="field">
-          <label for="taskCategory">Tag</label>
-          <select id="taskCategory">
-            <option value="">— None —</option>
-          </select>
         </div>
         <div class="field">
           <label for="newTask">Task</label>
@@ -1475,16 +795,15 @@
             <input type="date" id="dueDate">
           </div>
           <div class="field">
-            <label for="courseSelect">Category</label>
+            <label for="courseSelect">Course</label>
             <select id="courseSelect">
-              <option value="">— No category —</option>
+              <option value="">— No course —</option>
             </select>
           </div>
         </div>
         <button class="btn-primary btn-full" id="addTaskBtn">Add Task</button>
       </div>
 
-      </div><!-- /left-panel-inner -->
     </div><!-- /left-pane -->
 
     <!-- ══════════════ RIGHT PANE ══════════════ -->
@@ -1520,8 +839,7 @@
           <select id="ovSort">
             <option value="dueDate">Due Date</option>
             <option value="text">Task Name</option>
-            <option value="course">Category</option>
-            <option value="category">Tag</option>
+            <option value="course">Course</option>
             <option value="status">Status</option>
           </select>
           <select id="ovDir">
@@ -1536,79 +854,26 @@
             <option value="">All Dates</option>
             <option value="overdue">Overdue</option>
             <option value="today">Due Today</option>
-            <option value="todaytomorrow">Today/Tomorrow</option>
-            <option value="thisweek">This Week</option>
-            <option value="specific">Specific Date</option>
             <option value="future">Upcoming</option>
             <option value="none">No Date</option>
           </select>
-          <input type="date" id="ovFilterDateSpecific" class="ov-filter-date-picker" title="Select date" style="display:none">
           <select id="ovFilterStatus">
             <option value="">All Statuses</option>
             <option value="open">Open</option>
             <option value="done">Complete</option>
           </select>
-          <select id="ovFilterCategory">
-            <option value="">All Tag</option>
-          </select>
-          <select id="ovFilterCourse">
-            <option value="">All Categories</option>
-          </select>
-          <select id="ovFilterSubtask">
-            <option value="">All Tasks</option>
-            <option value="hassubtasks">Has subtasks</option>
-            <option value="nosubtasks">No subtasks</option>
-          </select>
-        </div>
-
-        <!-- Bulk update bar -->
-        <div class="bulk-update-bar" id="bulkUpdateBar">
-          <span class="bulk-label" id="bulkSelectedCount">0 selected</span>
-          <label>Task:</label>
-          <input type="text" id="bulkTask" placeholder="Leave empty to skip">
-          <label>Category:</label>
-          <select id="bulkCourse">
-            <option value="">— Skip —</option>
-          </select>
-          <label>Due Date:</label>
-          <input type="date" id="bulkDue" title="Leave empty to skip">
-          <label>Tag:</label>
-          <select id="bulkCategory">
-            <option value="">— Skip —</option>
-          </select>
-          <label>Status:</label>
-          <select id="bulkStatus">
-            <option value="">— Skip —</option>
-            <option value="open">Open</option>
-            <option value="done">Complete</option>
-          </select>
-          <button class="bulk-apply-btn" id="bulkApplyBtn">Apply to selected</button>
-          <button class="bulk-clear-btn" id="bulkClearSelection">Clear selection</button>
         </div>
 
         <!-- Table -->
         <div class="overview-table-wrap">
-          <table class="overview-table" id="overviewTable">
-            <colgroup>
-              <col id="col-select" style="width:40px">
-              <col id="col-text" style="width:200px">
-              <col id="col-course" style="width:140px">
-              <col id="col-category" style="width:100px">
-              <col id="col-dueDate" style="width:120px">
-              <col id="col-status" style="width:100px">
-              <col id="col-actions" style="width:96px">
-            </colgroup>
+          <table>
             <thead>
               <tr>
-                <th class="ov-select-cell" style="cursor:default;">
-                  <input type="checkbox" id="bulkSelectAll" title="Select all visible">
-                </th>
-                <th class="resizable draggable" data-col="text" draggable="true">Task <span class="sort-arrow">↕</span><span class="col-resizer" data-col="text"></span></th>
-                <th class="resizable draggable" data-col="course" draggable="true">Category <span class="sort-arrow">↕</span><span class="col-resizer" data-col="course"></span></th>
-                <th class="resizable draggable" data-col="category" draggable="true">Tag <span class="sort-arrow">↕</span><span class="col-resizer" data-col="category"></span></th>
-                <th class="resizable draggable" data-col="dueDate" draggable="true">Due Date <span class="sort-arrow">↕</span><span class="col-resizer" data-col="dueDate"></span></th>
-                <th class="resizable draggable" data-col="status" draggable="true">Status <span class="sort-arrow">↕</span><span class="col-resizer" data-col="status"></span></th>
-                <th style="cursor:default;"></th>
+                <th data-col="text">Task <span class="sort-arrow">↕</span></th>
+                <th data-col="course">Course <span class="sort-arrow">↕</span></th>
+                <th data-col="dueDate">Due Date <span class="sort-arrow">↕</span></th>
+                <th data-col="status">Status <span class="sort-arrow">↕</span></th>
+                <th style="width:2.5rem;cursor:default;"></th>
               </tr>
             </thead>
             <tbody id="overviewBody"></tbody>
@@ -1633,239 +898,6 @@
 
   <script>
     /* ═══════════════════════════════════════════
-       API & Auth
-    ═══════════════════════════════════════════ */
-    const USE_API = (window.location.protocol === 'http:' || window.location.protocol === 'https:');
-    const API_URL = 'https://todo-list-app-rrjb.onrender.com';
-    const LOCAL_ORIGINS = ['http://localhost:3001', 'http://127.0.0.1:3001'];
-    const API_BASE = (USE_API && window.location.origin !== API_URL && !LOCAL_ORIGINS.includes(window.location.origin)) ? API_URL : '';
-
-    function getToken() { return localStorage.getItem('td_token'); }
-    function setToken(t) { localStorage.setItem('td_token', t); }
-    function clearToken() { localStorage.removeItem('td_token'); }
-
-    async function apiFetch(path, options = {}) {
-      const token = getToken();
-      const headers = { ...options.headers, 'Content-Type': 'application/json' };
-      if (token) headers['Authorization'] = 'Bearer ' + token;
-      const res = await fetch(API_BASE + path, { ...options, headers });
-      if (res.status === 401) { clearToken(); throw new Error('Unauthorized'); }
-      return res;
-    }
-
-    let saveDebounceTimer = null;
-    function debouncedSync() {
-      if (saveDebounceTimer) clearTimeout(saveDebounceTimer);
-      saveDebounceTimer = setTimeout(() => {
-        saveDebounceTimer = null;
-        apiFetch('/api/sync', {
-          method: 'POST',
-          body: JSON.stringify({ courses, tags, tasks })
-        }).then(r => { if (!r.ok) throw new Error('Sync failed'); }).catch(() => {});
-      }, 300);
-    }
-    async function syncImmediate(timeoutMs = 90000) {
-      if (!USE_API) return;
-      if (saveDebounceTimer) { clearTimeout(saveDebounceTimer); saveDebounceTimer = null; }
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-      try {
-        const r = await apiFetch('/api/sync', {
-          method: 'POST',
-          body: JSON.stringify({ courses, tags, tasks }),
-          signal: controller.signal
-        });
-        clearTimeout(timeoutId);
-        if (!r.ok) {
-          const errMsg = await r.text().catch(() => '');
-          let msg = 'Sync failed';
-          try {
-            const j = JSON.parse(errMsg);
-            if (j.error) msg = j.error;
-          } catch (_) {
-            if (/^\s*<(!DOCTYPE|html)/i.test(errMsg)) {
-              msg = r.status === 404 ? 'API not found. Is the server running?' : 'Server returned an error page (may be starting or unavailable).';
-            } else if (errMsg) msg = errMsg.slice(0, 80).trim();
-          }
-          throw new Error(msg);
-        }
-      } catch (e) {
-        clearTimeout(timeoutId);
-        if (e.name === 'AbortError') throw new Error('Sync timed out (server may be starting). Try again.');
-        throw e;
-      }
-    }
-
-    const SYNC_BATCH_SIZE = 200;
-    async function syncBatched(timeoutMs = 300000) {
-      if (!USE_API) return;
-      if (saveDebounceTimer) { clearTimeout(saveDebounceTimer); saveDebounceTimer = null; }
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-      try {
-        const numBatches = Math.max(1, Math.ceil(tasks.length / SYNC_BATCH_SIZE));
-        for (let b = 0; b < numBatches; b++) {
-          const chunk = tasks.slice(b * SYNC_BATCH_SIZE, (b + 1) * SYNC_BATCH_SIZE);
-          const payload = { courses, tags, tasks: chunk, merge: b > 0 };
-          const r = await apiFetch('/api/sync', {
-            method: 'POST',
-            body: JSON.stringify(payload),
-            signal: controller.signal
-          });
-          if (!r.ok) {
-            const errMsg = await r.text().catch(() => '');
-            let msg = 'Sync failed';
-            try { const j = JSON.parse(errMsg); if (j.error) msg = j.error; } catch (_) { if (errMsg) msg = errMsg.slice(0, 80).trim(); }
-            throw new Error(msg);
-          }
-          if (b + 1 < numBatches) {
-            await new Promise(r => setTimeout(r, 300));
-          }
-        }
-        clearTimeout(timeoutId);
-      } catch (e) {
-        clearTimeout(timeoutId);
-        if (e.name === 'AbortError') throw new Error('Sync timed out (server may be starting). Try again.');
-        throw e;
-      }
-    }
-
-    let userPreferences = {};
-    let prefsDebounceTimer = null;
-    function debouncedSavePreferences() {
-      if (!USE_API) return;
-      if (prefsDebounceTimer) clearTimeout(prefsDebounceTimer);
-      prefsDebounceTimer = setTimeout(() => {
-        prefsDebounceTimer = null;
-        const prefs = getPreferencesFromUI();
-        apiFetch('/api/preferences', { method: 'PUT', body: JSON.stringify({ preferences: prefs }) }).then(r => { if (!r.ok) throw new Error(); }).catch(() => {});
-      }, 400);
-    }
-    function getPreferencesFromUI() {
-      const RESIZABLE_COLS = ['text', 'course', 'category', 'dueDate', 'status'];
-      const DEFAULT_COL_WIDTHS = { select: 40, text: 200, course: 140, category: 100, dueDate: 120, status: 100, actions: 96 };
-      const widths = {};
-      RESIZABLE_COLS.concat(['select', 'actions']).forEach(col => {
-        const el = document.getElementById('col-' + col);
-        if (el && el.style.width) widths[col] = parseInt(el.style.width, 10) || DEFAULT_COL_WIDTHS[col];
-      });
-      const order = getColOrder ? getColOrder() : [];
-      return {
-        colOrder: order.length ? order : ['text', 'course', 'category', 'dueDate', 'status'],
-        colWidths: Object.keys(widths).length ? widths : {},
-        overviewVisible: typeof overviewVisible !== 'undefined' ? overviewVisible : true,
-        leftPanelCollapsed: typeof leftPanelCollapsed !== 'undefined' ? leftPanelCollapsed : false,
-        sortCol: document.getElementById('ovSort')?.value || 'dueDate',
-        sortDir: document.getElementById('ovDir')?.value || 'asc',
-        filterDate: document.getElementById('ovFilterDate')?.value || '',
-        filterDateSpecific: document.getElementById('ovFilterDateSpecific')?.value || '',
-        filterStatus: document.getElementById('ovFilterStatus')?.value || '',
-        filterCategory: document.getElementById('ovFilterCategory')?.value || '',
-        filterCourse: document.getElementById('ovFilterCourse')?.value || '',
-        filterSubtask: document.getElementById('ovFilterSubtask')?.value || '',
-        coursesOpen: typeof coursesOpen !== 'undefined' ? coursesOpen : false,
-        tagsOpen: typeof tagsOpen !== 'undefined' ? tagsOpen : false
-      };
-    }
-    function applyPreferences(prefs) {
-      if (!prefs || typeof prefs !== 'object') return;
-      userPreferences = prefs;
-      if (prefs.colOrder && Array.isArray(prefs.colOrder)) applyColOrder(prefs.colOrder);
-      if (prefs.colWidths && typeof prefs.colWidths === 'object' && Object.keys(prefs.colWidths).length) {
-        const DEFAULT_COL_WIDTHS = { select: 40, text: 200, course: 140, category: 100, dueDate: 120, status: 100, actions: 96 };
-        applyColWidths({ ...DEFAULT_COL_WIDTHS, ...prefs.colWidths });
-      }
-      if (typeof prefs.overviewVisible === 'boolean') {
-        overviewVisible = prefs.overviewVisible;
-        const pane = document.getElementById('rightPane');
-        const wrapper = document.getElementById('appWrapper');
-        const btn = document.getElementById('toggleOverviewBtn');
-        if (pane && wrapper && btn) {
-          pane.classList.toggle('hidden', !overviewVisible);
-          wrapper.classList.toggle('overview-hidden', !overviewVisible);
-          btn.textContent = overviewVisible ? 'Hide Overview' : 'Show Overview';
-        }
-      }
-      if (typeof prefs.leftPanelCollapsed === 'boolean') {
-        leftPanelCollapsed = prefs.leftPanelCollapsed;
-        const pane = document.getElementById('leftPane');
-        const wrapper = document.getElementById('appWrapper');
-        const btn = document.getElementById('leftPanelToggle');
-        if (pane && wrapper && btn) {
-          pane.classList.toggle('collapsed', leftPanelCollapsed);
-          wrapper.classList.toggle('left-panel-collapsed', leftPanelCollapsed);
-          btn.textContent = leftPanelCollapsed ? '▶ Expand' : '◀ Collapse';
-          btn.title = leftPanelCollapsed ? 'Expand panel' : 'Collapse panel';
-        }
-      }
-      const ovSort = document.getElementById('ovSort');
-      const ovDir = document.getElementById('ovDir');
-      if (ovSort && prefs.sortCol) ovSort.value = prefs.sortCol;
-      if (ovDir && prefs.sortDir) ovDir.value = prefs.sortDir;
-      const filterDate = document.getElementById('ovFilterDate');
-      const filterDateSpecific = document.getElementById('ovFilterDateSpecific');
-      if (filterDate && prefs.filterDate) filterDate.value = prefs.filterDate;
-      if (filterDateSpecific && prefs.filterDateSpecific) filterDateSpecific.value = prefs.filterDateSpecific;
-      if (filterDateSpecific) filterDateSpecific.style.display = (prefs.filterDate === 'specific') ? '' : 'none';
-      const filterStatus = document.getElementById('ovFilterStatus');
-      const filterCategory = document.getElementById('ovFilterCategory');
-      const filterCourse = document.getElementById('ovFilterCourse');
-      const filterSubtask = document.getElementById('ovFilterSubtask');
-      if (filterStatus && prefs.filterStatus) filterStatus.value = prefs.filterStatus;
-      if (filterCategory && prefs.filterCategory) filterCategory.value = prefs.filterCategory;
-      if (filterCourse && prefs.filterCourse) filterCourse.value = prefs.filterCourse;
-      if (filterSubtask && prefs.filterSubtask) filterSubtask.value = prefs.filterSubtask;
-      if (typeof prefs.coursesOpen === 'boolean') {
-        coursesOpen = prefs.coursesOpen;
-        const body = document.getElementById('coursesBody');
-        const toggle = document.getElementById('coursesToggle');
-        if (body && toggle) {
-          body.style.maxHeight = coursesOpen ? '' : '0';
-          toggle.classList.toggle('collapsed', !coursesOpen);
-        }
-      }
-      if (typeof prefs.tagsOpen === 'boolean') {
-        tagsOpen = prefs.tagsOpen;
-        const body = document.getElementById('tagsBody');
-        const toggle = document.getElementById('tagsToggle');
-        if (body && toggle) {
-          body.style.maxHeight = tagsOpen ? '' : '0';
-          toggle.classList.toggle('collapsed', !tagsOpen);
-        }
-      }
-    }
-
-    async function loadDataFromApi() {
-      const res = await apiFetch('/api/data');
-      if (!res.ok) throw new Error('Failed to load data');
-      const data = await res.json();
-      courses = data.courses || [];
-      tags = data.tags || [];
-      tasks = (data.tasks || []).map(t => ({
-        id: t.id,
-        text: t.text,
-        dueDate: t.dueDate || '',
-        courseId: t.courseId || '',
-        category: t.category || '',
-        done: !!t.done,
-        parentId: t.parentId || ''
-      }));
-      if (data.preferences) userPreferences = data.preferences;
-    }
-
-    function showAuthOverlay() {
-      document.getElementById('authOverlay').classList.remove('hidden');
-      document.getElementById('userLogoutWrap').style.display = 'none';
-    }
-    function hideAuthOverlay() {
-      document.getElementById('authOverlay').classList.add('hidden');
-      if (USE_API) document.getElementById('userLogoutWrap').style.display = 'flex';
-    }
-    function setUserEmail(email) {
-      document.getElementById('userEmailDisplay').textContent = email || '';
-    }
-
-    /* ═══════════════════════════════════════════
        Data
     ═══════════════════════════════════════════ */
     const COURSE_COLORS = [
@@ -1874,70 +906,12 @@
       '#7f8c8d','#d35400'
     ];
 
-    let courses = USE_API ? [] : JSON.parse(localStorage.getItem('td_courses') || '[]');
-    let tasks   = USE_API ? [] : JSON.parse(localStorage.getItem('td_tasks')   || '[]');
-    let tags = USE_API ? [] : JSON.parse(localStorage.getItem('td_tags') || '[]');
-    const pendingRemovalTaskIds = new Set();
-    const selectedTaskIds = new Set();
-    const expandedTaskIds = new Set();
-
-    function getSubtasks(parentId) {
-      return tasks.filter(t => (t.parentId || '') === parentId);
-    }
-    function getSubtaskCount(parentId) {
-      return getSubtasks(parentId).length;
-    }
-    function getTaskForDisplay(t) {
-      if (t.parentId) {
-        const parent = tasks.find(x => x.id === t.parentId);
-        return parent ? { ...parent, ...t } : t;
-      }
-      return t;
-    }
-    function syncParentOnSubtaskComplete(task) {
-      if (!task.parentId) return;
-      const siblings = getSubtasks(task.parentId);
-      if (siblings.length === 0 || !siblings.every(s => s.done)) return;
-      const parent = tasks.find(x => x.id === task.parentId);
-      if (parent && !parent.done) {
-        parent.done = true;
-        syncParentOnSubtaskComplete(parent);
-      }
-    }
-    function syncParentOnSubtaskReopen(task) {
-      if (!task.parentId) return;
-      const parent = tasks.find(x => x.id === task.parentId);
-      if (parent && parent.done) {
-        parent.done = false;
-        syncParentOnSubtaskReopen(parent);
-      }
-    }
-    function addSubtask(parentId, text) {
-      const parent = tasks.find(x => x.id === parentId);
-      if (!parent || !text.trim()) return;
-      tasks.push({
-        id: genId(),
-        text: text.trim(),
-        parentId,
-        done: false,
-        courseId: parent.courseId || '',
-        category: parent.category || '',
-        dueDate: parent.dueDate || ''
-      });
-      if (parent.done) {
-        parent.done = false;
-        syncParentOnSubtaskReopen(parent);
-      }
-      save();
-      expandedTaskIds.add(parentId);
-      renderTasks();
-    }
+    let courses = JSON.parse(localStorage.getItem('td_courses') || '[]');
+    let tasks   = JSON.parse(localStorage.getItem('td_tasks')   || '[]');
 
     function save() {
-      if (USE_API) { debouncedSync(); return; }
       localStorage.setItem('td_courses', JSON.stringify(courses));
       localStorage.setItem('td_tasks',   JSON.stringify(tasks));
-      localStorage.setItem('td_tags',    JSON.stringify(tags));
     }
 
     function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2); }
@@ -1964,46 +938,32 @@
       return 'future';
     }
 
-    function tomorrowStr() {
-      const d = new Date();
-      d.setDate(d.getDate() + 1);
-      return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-    }
-
-    function isInThisWeek(iso) {
-      if (!iso) return false;
-      const today = new Date();
-      const day = today.getDay();
-      const sun = new Date(today);
-      sun.setDate(today.getDate() - day);
-      const sat = new Date(sun);
-      sat.setDate(sun.getDate() + 6);
-      const isoStart = `${sun.getFullYear()}-${String(sun.getMonth()+1).padStart(2,'0')}-${String(sun.getDate()).padStart(2,'0')}`;
-      const isoEnd = `${sat.getFullYear()}-${String(sat.getMonth()+1).padStart(2,'0')}-${String(sat.getDate()).padStart(2,'0')}`;
-      return iso >= isoStart && iso <= isoEnd;
-    }
-
     /* ═══════════════════════════════════════════
-       Categories
+       Courses
     ═══════════════════════════════════════════ */
+    function courseColor(course) {
+      const idx = courses.indexOf(course);
+      return COURSE_COLORS[idx % COURSE_COLORS.length];
+    }
+
     function getCourse(id) { return courses.find(c => c.id === id) || null; }
 
     function renderCourses() {
       const list = document.getElementById('coursesList');
       list.innerHTML = '';
       if (courses.length === 0) {
-        list.innerHTML = '<p style="color:#aaa;font-size:0.88rem;margin:0 0 0.75rem">No categories yet.</p>';
+        list.innerHTML = '<p style="color:#aaa;font-size:0.88rem;margin:0 0 0.75rem">No courses yet.</p>';
       } else {
         courses.forEach(c => {
           const item = document.createElement('div');
           item.className = 'course-item';
-          item.style.borderLeftColor = '#ccc';
+          item.style.borderLeftColor = courseColor(c);
           item.innerHTML = `
             <div class="course-info">
               <div class="course-name">${escHtml(c.name)}</div>
               ${c.description ? `<div class="course-desc">${escHtml(c.description)}</div>` : ''}
             </div>
-            <button class="btn-danger btn-sm" title="Delete category">✕</button>
+            <button class="btn-danger btn-sm" title="Delete course">✕</button>
           `;
           item.querySelector('button').addEventListener('click', () => deleteCourse(c.id));
           list.appendChild(item);
@@ -2018,20 +978,6 @@
       while (sel.options.length > 1) sel.remove(1);
       courses.forEach(c => sel.appendChild(new Option(c.name, c.id)));
       sel.value = prev || '';
-
-      const bulkSel = document.getElementById('bulkCourse');
-      if (bulkSel) {
-        while (bulkSel.options.length > 1) bulkSel.remove(1);
-        courses.forEach(c => bulkSel.appendChild(new Option(c.name, c.id)));
-      }
-
-      const filterSel = document.getElementById('ovFilterCourse');
-      if (filterSel) {
-        const filterPrev = filterSel.value;
-        while (filterSel.options.length > 1) filterSel.remove(1);
-        courses.forEach(c => filterSel.appendChild(new Option(c.name, c.id)));
-        filterSel.value = filterPrev || '';
-      }
     }
 
     function addCourse() {
@@ -2047,142 +993,11 @@
     }
 
     function deleteCourse(id) {
-      if (!confirm('Delete this category? Tasks linked to it will become unassigned.')) return;
+      if (!confirm('Delete this course? Tasks linked to it will become unassigned.')) return;
       courses = courses.filter(c => c.id !== id);
       tasks.forEach(t => { if (t.courseId === id) t.courseId = ''; });
       save();
       renderCourses();
-      renderTasks();
-    }
-
-    /* ═══════════════════════════════════════════
-       Tags
-    ═══════════════════════════════════════════ */
-    function tagColor(tag) {
-      if (tag.color) return tag.color;
-      const idx = tags.indexOf(tag);
-      return COURSE_COLORS[idx % COURSE_COLORS.length];
-    }
-
-    function renderTags() {
-      const list = document.getElementById('tagsList');
-      if (!list) return;
-      list.innerHTML = '';
-      if (tags.length === 0) {
-        list.innerHTML = '<p style="color:#aaa;font-size:0.88rem;margin:0 0 0.75rem">No tags yet.</p>';
-      } else {
-        tags.forEach(tag => {
-          const color = tagColor(tag);
-          const item = document.createElement('div');
-          item.className = 'tag-item';
-          item.style.borderLeftColor = color;
-          item.innerHTML = `
-            <input type="color" class="tag-color-picker" value="${color}" data-id="${tag.id}" title="Change color" style="width:24px;height:24px;padding:0;border:2px solid rgba(0,0,0,0.15);border-radius:6px;cursor:pointer;flex-shrink:0;">
-            <div class="tag-info">
-              <div class="tag-name" data-id="${tag.id}" title="Double-click to edit">${escHtml(tag.name)}</div>
-            </div>
-            <button class="btn-danger btn-sm" title="Delete tag">✕</button>
-          `;
-          item.querySelector('.tag-color-picker').addEventListener('input', e => {
-            const t = tags.find(x => x.id === tag.id);
-            if (t) { t.color = e.target.value; save(); renderTags(); renderOverview(); }
-          });
-          const nameEl = item.querySelector('.tag-name');
-          nameEl.addEventListener('dblclick', () => {
-            const oldName = tag.name;
-            const inp = document.createElement('input');
-            inp.type = 'text';
-            inp.value = oldName;
-            inp.className = 'tag-name-edit';
-            inp.style.cssText = 'width:100%;font-size:0.9rem;font-weight:600;padding:2px 4px;border:1px solid #4a90d9;border-radius:4px;';
-            nameEl.replaceWith(inp);
-            inp.focus();
-            inp.select();
-            const commit = () => {
-              const newName = inp.value.trim();
-              if (!newName || newName === oldName) { renderTags(); return; }
-              if (tags.some(t => t.id !== tag.id && t.name.toLowerCase() === newName.toLowerCase())) {
-                alert('A tag with this name already exists.');
-                inp.focus();
-                return;
-              }
-              const t = tags.find(x => x.id === tag.id);
-              if (t) {
-                t.name = newName;
-                tasks.forEach(task => { if (task.category === oldName) task.category = newName; });
-                save();
-                renderTags();
-                renderOverview();
-              }
-            };
-            inp.addEventListener('blur', commit);
-            inp.addEventListener('keydown', e => { if (e.key === 'Enter') { inp.blur(); } else if (e.key === 'Escape') { renderTags(); } });
-          });
-          item.querySelector('button').addEventListener('click', () => deleteTag(tag.id));
-          list.appendChild(item);
-        });
-      }
-      populateTagSelects();
-    }
-
-    function populateTagSelects() {
-      const taskSel = document.getElementById('taskCategory');
-      if (taskSel) {
-        const prev = taskSel.value;
-        while (taskSel.options.length > 1) taskSel.remove(1);
-        taskSel.innerHTML = '<option value="">— None —</option>';
-        tags.forEach(t => taskSel.appendChild(new Option(t.name, t.name)));
-        taskSel.value = prev || '';
-      }
-      const editSel = document.getElementById('editTaskCategory');
-      if (editSel) {
-        const prev = editSel.value;
-        while (editSel.options.length > 1) editSel.remove(1);
-        editSel.innerHTML = '<option value="">— None —</option>';
-        tags.forEach(t => editSel.appendChild(new Option(t.name, t.name)));
-        editSel.value = prev || '';
-      }
-      const bulkSel = document.getElementById('bulkCategory');
-      if (bulkSel) {
-        const prev = bulkSel.value;
-        while (bulkSel.options.length > 1) bulkSel.remove(1);
-        bulkSel.innerHTML = '<option value="">— Skip —</option>';
-        tags.forEach(t => bulkSel.appendChild(new Option(t.name, t.name)));
-        bulkSel.value = prev || '';
-      }
-      const filterSel = document.getElementById('ovFilterCategory');
-      if (filterSel) {
-        const filterPrev = filterSel.value;
-        while (filterSel.options.length > 1) filterSel.remove(1);
-        filterSel.innerHTML = '<option value="">All Tag</option>';
-        tags.forEach(t => filterSel.appendChild(new Option(t.name, t.name)));
-        filterSel.value = filterPrev || '';
-      }
-    }
-
-    function addTag() {
-      const name = document.getElementById('tagName').value.trim();
-      const color = document.getElementById('tagColor').value || COURSE_COLORS[tags.length % COURSE_COLORS.length];
-      if (!name) { document.getElementById('tagName').focus(); return; }
-      if (tags.some(t => t.name.toLowerCase() === name.toLowerCase())) {
-        alert('A tag with this name already exists.');
-        return;
-      }
-      tags.push({ id: genId(), name, color });
-      save();
-      renderTags();
-      renderOverview();
-      document.getElementById('tagName').value = '';
-    }
-
-    function deleteTag(id) {
-      const tag = tags.find(t => t.id === id);
-      if (!tag) return;
-      if (!confirm(`Delete tag "${tag.name}"? Tasks with this tag will have it cleared.`)) return;
-      tags = tags.filter(t => t.id !== id);
-      tasks.forEach(t => { if (t.category === tag.name) t.category = ''; });
-      save();
-      renderTags();
       renderTasks();
     }
 
@@ -2197,14 +1012,12 @@
       const text     = document.getElementById('newTask').value.trim();
       const dueDate  = document.getElementById('dueDate').value;
       const courseId = document.getElementById('courseSelect').value;
-      const category = document.getElementById('taskCategory').value || '';
       if (!text) { document.getElementById('newTask').focus(); return; }
-      tasks.push({ id: genId(), text, dueDate, courseId, category, done: false });
+      tasks.push({ id: genId(), text, dueDate, courseId, done: false });
       save();
       document.getElementById('newTask').value  = '';
       document.getElementById('dueDate').value  = '';
       document.getElementById('courseSelect').value = '';
-      document.getElementById('taskCategory').value = '';
       renderTasks();
       document.getElementById('newTask').focus();
     }
@@ -2217,14 +1030,9 @@
       const ovEmpty      = document.getElementById('overviewEmpty');
       const sortCol      = document.getElementById('ovSort').value;
       const sortDir      = document.getElementById('ovDir').value;
-      const filterDate     = document.getElementById('ovFilterDate').value;
-      const filterDateSpecific = document.getElementById('ovFilterDateSpecific');
-      filterDateSpecific.style.display = filterDate === 'specific' ? '' : 'none';
-      const filterStatus   = document.getElementById('ovFilterStatus').value;
-      const filterCategory = document.getElementById('ovFilterCategory').value;
-      const filterCourse   = document.getElementById('ovFilterCourse').value;
-      const filterSubtask  = document.getElementById('ovFilterSubtask').value;
-      const today          = todayStr();
+      const filterDate   = document.getElementById('ovFilterDate').value;
+      const filterStatus = document.getElementById('ovFilterStatus').value;
+      const today        = todayStr();
 
       // Update column header sort arrows
       document.querySelectorAll('thead th[data-col]').forEach(th => {
@@ -2248,30 +1056,14 @@
       document.getElementById('statToday').textContent   = todayCt;
       document.getElementById('statOverdue').textContent = overdue;
 
-      // Apply filters (root tasks only; subtasks shown when parent expanded)
+      // Apply filters
       const visible = tasks.filter(t => {
-        if (t.parentId) return false;
-        if (pendingRemovalTaskIds.has(t.id)) return true;
         if (filterStatus === 'open' && t.done)  return false;
         if (filterStatus === 'done' && !t.done) return false;
-        if (filterCategory && (t.category || '') !== filterCategory) return false;
-        if (filterCourse && (t.courseId || '') !== filterCourse) return false;
-        if (filterSubtask === 'hassubtasks' && getSubtaskCount(t.id) === 0) return false;
-        if (filterSubtask === 'nosubtasks' && getSubtaskCount(t.id) > 0) return false;
         if (filterDate) {
           const sev = dueSeverity(t.dueDate);
           if (filterDate === 'overdue' && sev !== 'overdue') return false;
           if (filterDate === 'today'   && sev !== 'today')   return false;
-          if (filterDate === 'todaytomorrow') {
-            const today = todayStr();
-            const tomorrow = tomorrowStr();
-            if (!t.dueDate || (t.dueDate !== today && t.dueDate !== tomorrow)) return false;
-          }
-          if (filterDate === 'thisweek' && !isInThisWeek(t.dueDate)) return false;
-          if (filterDate === 'specific') {
-            const selDate = filterDateSpecific.value;
-            if (!selDate || t.dueDate !== selDate) return false;
-          }
           if (filterDate === 'future'  && sev !== 'future')  return false;
           if (filterDate === 'none'    && t.dueDate)         return false;
         }
@@ -2281,15 +1073,12 @@
       if (tasks.length === 0) {
         tbody.innerHTML = '';
         ovEmpty.style.display = 'block';
-        selectedTaskIds.clear();
-        updateBulkBar();
         return;
       }
 
       if (visible.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:#aaa;padding:1.2rem">No tasks match the current filters.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:#aaa;padding:1.2rem">No tasks match the current filters.</td></tr>`;
         ovEmpty.style.display = 'none';
-        updateBulkBar();
         return;
       }
       ovEmpty.style.display = 'none';
@@ -2301,9 +1090,6 @@
         } else if (sortCol === 'course') {
           va = (getCourse(a.courseId)?.name || '').toLowerCase();
           vb = (getCourse(b.courseId)?.name || '').toLowerCase();
-        } else if (sortCol === 'category') {
-          va = (a.category || '').toLowerCase();
-          vb = (b.category || '').toLowerCase();
         } else if (sortCol === 'dueDate') {
           va = a.dueDate || '9999-99-99'; vb = b.dueDate || '9999-99-99';
         } else if (sortCol === 'status') {
@@ -2315,484 +1101,63 @@
       });
 
       tbody.innerHTML = '';
-
-      function renderTaskRow(t, depth) {
+      sorted.forEach(t => {
         const course   = getCourse(t.courseId);
         const severity = dueSeverity(t.dueDate);
-        const isPendingRemoval = pendingRemovalTaskIds.has(t.id);
-        const hasSubs = getSubtaskCount(t.id) > 0;
-        const isExpanded = expandedTaskIds.has(t.id);
 
         const tr = document.createElement('tr');
-        if (t.parentId) tr.classList.add('ov-subtask-row');
-        if (isPendingRemoval)            tr.classList.add('row-pending-removal');
-        else if (t.done)                 tr.classList.add('row-done');
+        if (t.done)                      tr.classList.add('row-done');
         else if (severity === 'overdue') tr.classList.add('row-overdue');
         else if (severity === 'today')   tr.classList.add('row-today');
         else                             tr.classList.add('row-open');
 
-        let dateHtml = '<span class="ov-muted">—</span>';
+        // Date cell content
+        let dateHtml = '—';
         if (t.dueDate) {
           const cls = severity === 'overdue' ? 'overdue' : severity === 'today' ? 'today' : '';
           dateHtml = `<span class="ov-date ${cls}">${formatDate(t.dueDate)}</span>`;
         }
-        let courseHtml = '<span class="ov-muted">—</span>';
-        if (course) courseHtml = `<span class="badge badge-neutral">${escHtml(course.name)}</span>`;
-        courseHtml = `<span class="ov-course-clickable" data-task-id="${t.id}" title="Click to change category">${courseHtml}</span>`;
-        const pillCls = t.done ? 'done' : 'open';
-        const pillText = t.done ? '✓ Complete' : '● Open';
-        const actionsHtml = isPendingRemoval
-          ? `<div class="ov-actions-cell"><button class="ov-undo-btn" title="Undo remove">Undo</button><button class="ov-remove-btn" title="Remove permanently">✕</button></div>`
-          : `<div class="ov-actions-cell"><button class="ov-edit-btn" title="Edit task">Edit</button><button class="ov-remove-btn" title="Remove task">✕</button></div>`;
-        const canSelect = !isPendingRemoval;
-        const isSelected = selectedTaskIds.has(t.id);
-        const selectCell = canSelect
-          ? `<td class="ov-select-cell"><input type="checkbox" class="ov-row-select" data-id="${t.id}" ${isSelected ? 'checked' : ''} title="Select"></td>`
-          : `<td class="ov-select-cell"></td>`;
 
-        let taskCellHtml = '<div class="ov-task-cell">';
-        if (depth > 0) taskCellHtml += '<span class="ov-subtask-indent"></span>';
-        if (hasSubs) {
-          taskCellHtml += `<button class="ov-expand-btn" data-id="${t.id}" title="${isExpanded ? 'Collapse' : 'Expand'}">${isExpanded ? '▼' : '▶'}</button>`;
-          taskCellHtml += `<span class="ov-subtask-icon" title="${getSubtaskCount(t.id)} subtask(s)">📋</span>`;
+        // Course cell
+        let courseHtml = '<span style="color:#bbb">—</span>';
+        if (course) {
+          courseHtml = `<span class="badge" style="background:${courseColor(course)}">${escHtml(course.name)}</span>`;
         }
-        if (!t.parentId) taskCellHtml += `<button class="ov-add-subtask-btn" data-id="${t.id}" title="Add subtask">+</button>`;
-        taskCellHtml += `<div class="ov-task-text" title="${escHtml(t.text)}">${escHtml(t.text)}</div></div>`;
 
-        const tag = t.category ? tags.find(tg => tg.name === t.category) : null;
-        let tagHtml = '<span class="ov-muted">—</span>';
-        if (tag) tagHtml = `<span class="badge" style="background:${tagColor(tag)}">${escHtml(t.category)}</span>`;
-        tagHtml = `<span class="ov-tag-clickable" data-task-id="${t.id}" title="Click to change tag">${tagHtml}</span>`;
-        const cellMap = {
-          text: `<td>${taskCellHtml}</td>`,
-          course: `<td class="ov-course-td">${courseHtml}</td>`,
-          category: `<td class="ov-tag-td">${tagHtml}</td>`,
-          dueDate: `<td>${dateHtml}</td>`,
-          status: `<td><span class="status-pill ${pillCls}" title="Click to toggle">${pillText}</span></td>`
-        };
-        const colOrder = getColOrder();
-        const dataCells = colOrder.map(c => cellMap[c] || '').join('');
-        tr.innerHTML = `${selectCell}${dataCells}<td>${actionsHtml}</td>`;
+        // Status pill
+        const pillCls  = t.done ? 'done' : 'open';
+        const pillText = t.done ? '✓ Complete' : '● Open';
+
+        tr.innerHTML = `
+          <td><div class="ov-task-text" title="${escHtml(t.text)}">${escHtml(t.text)}</div></td>
+          <td>${courseHtml}</td>
+          <td>${dateHtml}</td>
+          <td><span class="status-pill ${pillCls}" title="Click to toggle">${pillText}</span></td>
+          <td><button class="ov-remove-btn" title="Remove task">✕</button></td>
+        `;
 
         tr.querySelector('.status-pill').addEventListener('click', e => {
-          if (isPendingRemoval) return;
           const wasUnchecked = !t.done;
           t.done = !t.done;
-          if (t.done) syncParentOnSubtaskComplete(t);
-          else syncParentOnSubtaskReopen(t);
-          if (t.done && wasUnchecked) launchFireworks(t);
+          if (t.done && wasUnchecked) launchFireworks();
           save();
           renderTasks();
         });
-        if (canSelect) {
-          tr.querySelector('.ov-row-select').addEventListener('change', e => {
-            if (e.target.checked) selectedTaskIds.add(t.id);
-            else selectedTaskIds.delete(t.id);
-            updateBulkBar();
-          });
-        }
-        if (isPendingRemoval) {
-          tr.querySelector('.ov-undo-btn').addEventListener('click', () => undoRemoveInRow(t.id));
-          tr.querySelector('.ov-remove-btn').addEventListener('click', () => confirmRemoveInRow(t.id));
-        } else {
-          tr.querySelector('.ov-edit-btn').addEventListener('click', () => openEditModal(t));
-          tr.querySelector('.ov-remove-btn').addEventListener('click', () => removeTaskWithUndo(t));
-        }
-        if (hasSubs) {
-          tr.querySelector('.ov-expand-btn').addEventListener('click', () => {
-            if (expandedTaskIds.has(t.id)) expandedTaskIds.delete(t.id);
-            else expandedTaskIds.add(t.id);
-            renderOverview();
-          });
-        }
-        const addBtn = tr.querySelector('.ov-add-subtask-btn');
-        if (addBtn) addBtn.addEventListener('click', () => {
-          expandedTaskIds.add(t.id);
-          renderOverview();
-          setTimeout(() => {
-            const inp = document.querySelector(`.ov-add-subtask-input[data-parent-id="${t.id}"]`);
-            if (inp) inp.focus();
-          }, 0);
+
+        tr.querySelector('.ov-remove-btn').addEventListener('click', () => {
+          tasks = tasks.filter(x => x.id !== t.id);
+          save();
+          renderTasks();
         });
 
-        const courseClickable = tr.querySelector('.ov-course-clickable');
-        if (courseClickable && !isPendingRemoval) {
-          courseClickable.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const td = courseClickable.closest('td');
-            if (!td || td.querySelector('select.ov-course-select')) return;
-            const task = tasks.find(x => x.id === t.id);
-            if (!task) return;
-            const sel = document.createElement('select');
-            sel.className = 'ov-course-select';
-            sel.innerHTML = '<option value="">— No category —</option>';
-            courses.forEach(c => sel.appendChild(new Option(c.name, c.id)));
-            sel.value = task.courseId || '';
-            td.innerHTML = '';
-            td.appendChild(sel);
-            sel.focus();
-            const apply = () => {
-              task.courseId = sel.value || '';
-              save();
-              renderOverview();
-            };
-            sel.addEventListener('change', apply);
-            sel.addEventListener('blur', () => { setTimeout(apply, 50); });
-          });
-        }
-
-        const tagClickable = tr.querySelector('.ov-tag-clickable');
-        if (tagClickable && !isPendingRemoval) {
-          tagClickable.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const td = tagClickable.closest('td');
-            if (!td || td.querySelector('select.ov-tag-select')) return;
-            const task = tasks.find(x => x.id === t.id);
-            if (!task) return;
-            const sel = document.createElement('select');
-            sel.className = 'ov-tag-select';
-            sel.innerHTML = '<option value="">— None —</option>';
-            tags.forEach(tg => sel.appendChild(new Option(tg.name, tg.name)));
-            sel.value = task.category || '';
-            td.innerHTML = '';
-            td.appendChild(sel);
-            sel.focus();
-            const apply = () => {
-              task.category = sel.value || '';
-              save();
-              renderOverview();
-            };
-            sel.addEventListener('change', apply);
-            sel.addEventListener('blur', () => { setTimeout(apply, 50); });
-          });
-        }
-
         tbody.appendChild(tr);
-
-        if (isExpanded) {
-          const subs = getSubtasks(t.id);
-          subs.forEach(sub => renderTaskRow(sub, depth + 1));
-          const addRow = document.createElement('tr');
-          addRow.className = 'ov-add-subtask-row';
-          addRow.innerHTML = `<td class="ov-select-cell"></td><td colspan="6"><input type="text" class="ov-add-subtask-input" placeholder="Add subtask..." data-parent-id="${t.id}"></td>`;
-          addRow.querySelector('input').addEventListener('keydown', e => {
-            if (e.key === 'Enter') {
-              const inp = e.target;
-              addSubtask(inp.dataset.parentId, inp.value);
-              inp.value = '';
-            }
-          });
-          tbody.appendChild(addRow);
-        }
-      }
-
-      sorted.forEach(t => renderTaskRow(t, 0));
-
-      updateBulkBar();
-    }
-
-    function updateBulkBar() {
-      const bar = document.getElementById('bulkUpdateBar');
-      const countEl = document.getElementById('bulkSelectedCount');
-      const selectAll = document.getElementById('bulkSelectAll');
-      if (!bar || !countEl) return;
-      const n = selectedTaskIds.size;
-      bar.classList.toggle('visible', n > 0);
-      countEl.textContent = n + ' selected';
-      if (selectAll) {
-        const visibleIds = [...document.querySelectorAll('.ov-row-select')].map(cb => cb.dataset.id);
-        const allSelected = visibleIds.length > 0 && visibleIds.every(id => selectedTaskIds.has(id));
-        selectAll.checked = allSelected;
-        selectAll.indeterminate = n > 0 && !allSelected;
-      }
-    }
-
-    function bulkApply() {
-      const taskVal = document.getElementById('bulkTask').value.trim();
-      const courseVal = document.getElementById('bulkCourse').value;
-      const categoryVal = document.getElementById('bulkCategory').value;
-      const dueVal = document.getElementById('bulkDue').value;
-      const statusVal = document.getElementById('bulkStatus').value;
-      let anyNewlyCompleted = false;
-      let lastNewlyCompleted = null;
-      selectedTaskIds.forEach(id => {
-        const t = tasks.find(x => x.id === id);
-        if (!t) return;
-        if (taskVal) t.text = taskVal;
-        if (courseVal !== '') t.courseId = courseVal;
-        if (categoryVal !== '') t.category = categoryVal;
-        if (dueVal) {
-          t.dueDate = dueVal;
-        }
-        if (statusVal === 'open') {
-          t.done = false;
-          syncParentOnSubtaskReopen(t);
-        } else if (statusVal === 'done') {
-          if (!t.done) { anyNewlyCompleted = true; lastNewlyCompleted = t; }
-          t.done = true;
-          syncParentOnSubtaskComplete(t);
-        }
       });
-      if (anyNewlyCompleted) launchFireworks(lastNewlyCompleted);
-      document.getElementById('bulkTask').value = '';
-      document.getElementById('bulkCourse').value = '';
-      document.getElementById('bulkCategory').value = '';
-      document.getElementById('bulkDue').value = '';
-      document.getElementById('bulkStatus').value = '';
-      selectedTaskIds.clear();
-      save();
-      renderTasks();
-    }
-
-    function bulkClearSelection() {
-      selectedTaskIds.clear();
-      updateBulkBar();
-      renderTasks();
-    }
-
-    function bulkSelectAllChange() {
-      const checked = document.getElementById('bulkSelectAll').checked;
-      document.querySelectorAll('.ov-row-select').forEach(cb => {
-        const id = cb.dataset.id;
-        if (checked) selectedTaskIds.add(id);
-        else selectedTaskIds.delete(id);
-        cb.checked = checked;
-      });
-      updateBulkBar();
-    }
-
-    /* ═══════════════════════════════════════════
-       Remove with Undo (in-row)
-    ═══════════════════════════════════════════ */
-    function removeTaskWithUndo(t) {
-      pendingRemovalTaskIds.add(t.id);
-      renderTasks();
-    }
-
-    function undoRemoveInRow(taskId) {
-      pendingRemovalTaskIds.delete(taskId);
-      renderTasks();
-    }
-
-    function removeTaskAndSubtasks(taskId) {
-      getSubtasks(taskId).forEach(sub => removeTaskAndSubtasks(sub.id));
-      tasks = tasks.filter(x => x.id !== taskId);
-    }
-    function confirmRemoveInRow(taskId) {
-      const task = tasks.find(x => x.id === taskId);
-      const parentId = task?.parentId;
-      removeTaskAndSubtasks(taskId);
-      pendingRemovalTaskIds.delete(taskId);
-      save();
-      renderTasks();
-    }
-
-    /* ═══════════════════════════════════════════
-       Edit modal
-    ═══════════════════════════════════════════ */
-    let editingTask = null;
-
-    function openEditModal(t) {
-      editingTask = t;
-      document.getElementById('editTaskText').value = t.text;
-      document.getElementById('editTaskDue').value = t.dueDate || '';
-      document.getElementById('editTaskStatus').value = t.done ? 'done' : 'open';
-      populateTagSelects();
-      document.getElementById('editTaskCategory').value = t.category || '';
-      const sel = document.getElementById('editTaskCourse');
-      sel.innerHTML = '<option value="">— No category —</option>';
-      courses.forEach(c => sel.appendChild(new Option(c.name, c.id)));
-      sel.value = t.courseId || '';
-      document.getElementById('editModalOverlay').classList.add('visible');
-      document.getElementById('editTaskText').focus();
-    }
-
-    function closeEditModal() {
-      document.getElementById('editModalOverlay').classList.remove('visible');
-      editingTask = null;
-    }
-
-    function saveEditModal() {
-      if (!editingTask) return;
-      const wasOpen = !editingTask.done;
-      editingTask.text = document.getElementById('editTaskText').value.trim();
-      editingTask.dueDate = document.getElementById('editTaskDue').value || '';
-      editingTask.courseId = document.getElementById('editTaskCourse').value || '';
-      editingTask.category = document.getElementById('editTaskCategory').value || '';
-      editingTask.done = document.getElementById('editTaskStatus').value === 'done';
-      if (!editingTask.text) { alert('Task cannot be empty.'); return; }
-      if (editingTask.done) syncParentOnSubtaskComplete(editingTask);
-      else syncParentOnSubtaskReopen(editingTask);
-      if (wasOpen && editingTask.done) launchFireworks(editingTask);
-      save();
-      renderTasks();
-      closeEditModal();
-    }
-
-    /* ═══════════════════════════════════════════
-       Import CSV
-    ═══════════════════════════════════════════ */
-    function parseCSV(text) {
-      const rows = [];
-      const lines = text.split(/\r?\n/).filter(l => l.trim());
-      for (let i = 0; i < lines.length; i++) {
-        const row = [];
-        let cur = '';
-        let inQuotes = false;
-        for (let j = 0; j < lines[i].length; j++) {
-          const c = lines[i][j];
-          if (c === '"') { inQuotes = !inQuotes; continue; }
-          if (!inQuotes && (c === ',' || c === '\t')) {
-            row.push(cur.trim());
-            cur = '';
-            continue;
-          }
-          cur += c;
-        }
-        row.push(cur.trim());
-        rows.push(row);
-      }
-      return rows;
-    }
-
-    function resolveCourseId(courseName, skipSave) {
-      if (!courseName || !courseName.trim()) return '';
-      const name = courseName.trim();
-      let c = courses.find(x => x.name.toLowerCase() === name.toLowerCase());
-      if (!c) {
-        c = { id: genId(), name, description: '' };
-        courses.push(c);
-        if (!skipSave) save();
-      }
-      return c.id;
-    }
-
-    function resolveTagName(tagName, skipSave) {
-      if (!tagName || !tagName.trim()) return '';
-      const name = tagName.trim();
-      let t = tags.find(x => x.name.toLowerCase() === name.toLowerCase());
-      if (!t) {
-        t = { id: genId(), name, color: COURSE_COLORS[tags.length % COURSE_COLORS.length] };
-        tags.push(t);
-        if (!skipSave) save();
-      }
-      return t.name;
-    }
-
-    function parseDate(str) {
-      if (!str || !str.trim()) return '';
-      const s = str.trim();
-      const m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
-      if (m) return `${m[3]}-${m[1].padStart(2,'0')}-${m[2].padStart(2,'0')}`;
-      const m2 = s.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/);
-      if (m2) return `${m2[1]}-${m2[2].padStart(2,'0')}-${m2[3].padStart(2,'0')}`;
-      return s;
-    }
-
-    function importFromCSV(file) {
-      const reader = new FileReader();
-      reader.onload = async e => {
-        if (USE_API && saveDebounceTimer) { clearTimeout(saveDebounceTimer); saveDebounceTimer = null; }
-        const text = e.target.result;
-        const rows = parseCSV(text);
-        if (rows.length < 2) { alert('CSV must have a header row and at least one data row.'); return; }
-        const header = rows[0].map(h => (h || '').toLowerCase().replace(/\s+/g, ''));
-        const ci = header.findIndex(h => h === 'category' || h === 'course');
-        const ti = header.findIndex(h => h === 'task');
-        const tagi = header.findIndex(h => h === 'tag' || h === 'tags');
-        const di = header.findIndex(h => h === 'duedate' || h === 'due');
-        const si = header.findIndex(h => h === 'status');
-        const pi = header.findIndex(h => h === 'parent' || h === 'parenttask');
-        if (ci < 0 || ti < 0 || tagi < 0 || di < 0 || si < 0) {
-          alert('CSV must have header columns: Category, Task, Tag, Due Date, Status');
-          return;
-        }
-        if (ci === tagi) {
-          alert('CSV must have separate Category and Tag columns.');
-          return;
-        }
-        const CATEGORY_COL = 0, TASK_COL = 1, TAG_COL = 2, DUE_COL = 3, STATUS_COL = 4, PARENT_COL = 5;
-        const useOrder = header.length >= 5 && header[0] === 'category' && header[1] === 'task' && header[2] === 'tag' && header[3] === 'duedate' && header[4] === 'status';
-        const cCol = useOrder ? CATEGORY_COL : ci;
-        const tCol = useOrder ? TASK_COL : ti;
-        const tagCol = useOrder ? TAG_COL : tagi;
-        const dCol = useOrder ? DUE_COL : di;
-        const sCol = useOrder ? STATUS_COL : si;
-        const pCol = useOrder && header.length > 5 ? PARENT_COL : (pi >= 0 ? pi : -1);
-        const taskTextToId = {};
-        tasks.forEach(t => { if (!taskTextToId[t.text]) taskTextToId[t.text] = t.id; });
-        let added = 0;
-        for (let i = 1; i < rows.length; i++) {
-          const row = rows[i];
-          const textVal = (row[tCol] || '').trim();
-          if (!textVal) continue;
-          const courseId = resolveCourseId(row[cCol] || '', true);
-          const dueDate  = parseDate(row[dCol] || '');
-          const statusVal = (row[sCol] || '').toLowerCase();
-          const done = statusVal.includes('complete') || statusVal.includes('done') || statusVal === '1';
-          const tagVal = (row[tagCol] || '').trim();
-          const taskTag = tagVal ? resolveTagName(tagVal, true) : '';
-          const parentText = (pCol >= 0 && row[pCol]) ? (row[pCol] || '').trim() : '';
-          const parentId = parentText && taskTextToId[parentText] ? taskTextToId[parentText] : '';
-          const task = { id: genId(), text: textVal, dueDate, courseId, category: taskTag, done, parentId };
-          tasks.push(task);
-          if (!taskTextToId[textVal]) taskTextToId[textVal] = task.id;
-          added++;
-        }
-        save();
-        let syncFailed = false;
-        let syncError = '';
-        if (USE_API) {
-          const delays = [0, 15000, 45000];
-          for (let i = 0; i < delays.length; i++) {
-            if (i > 0) await new Promise(r => setTimeout(r, delays[i]));
-            try {
-              await syncImmediate(120000);
-              break;
-            } catch (err) {
-              syncError = err.message || 'Unknown';
-              if (i === delays.length - 1) {
-                try {
-                  await syncBatched(300000);
-                  syncFailed = false;
-                  syncError = '';
-                } catch (batchErr) {
-                  syncError = batchErr.message || 'Unknown';
-                  syncFailed = true;
-                }
-              }
-            }
-          }
-        }
-        renderCourses();
-        renderTags();
-        renderTasks();
-        if (syncFailed) {
-          alert(`Imported ${added} task(s) locally, but sync to server failed.\n\nError: ${syncError}\n\nData may be lost on refresh. Try importing again later (e.g. after Render wakes up).`);
-        } else {
-          alert(`Imported ${added} task(s).`);
-        }
-      };
-      reader.readAsText(file);
     }
 
     /* ═══════════════════════════════════════════
        Toggle overview pane
     ═══════════════════════════════════════════ */
     let overviewVisible = true;
-    let leftPanelCollapsed = false;
-
-    function toggleLeftPanel() {
-      leftPanelCollapsed = !leftPanelCollapsed;
-      const pane    = document.getElementById('leftPane');
-      const wrapper = document.getElementById('appWrapper');
-      const btn     = document.getElementById('leftPanelToggle');
-      pane.classList.toggle('collapsed', leftPanelCollapsed);
-      wrapper.classList.toggle('left-panel-collapsed', leftPanelCollapsed);
-      btn.textContent = leftPanelCollapsed ? '▶ Expand' : '◀ Collapse';
-      btn.title      = leftPanelCollapsed ? 'Expand panel' : 'Collapse panel';
-      if (USE_API) debouncedSavePreferences();
-    }
 
     function toggleOverview() {
       overviewVisible = !overviewVisible;
@@ -2802,13 +1167,12 @@
       pane.classList.toggle('hidden', !overviewVisible);
       wrapper.classList.toggle('overview-hidden', !overviewVisible);
       btn.textContent = overviewVisible ? 'Hide Overview' : 'Show Overview';
-      if (USE_API) debouncedSavePreferences();
     }
 
     /* ═══════════════════════════════════════════
-       Collapsible categories panel
+       Collapsible courses panel
     ═══════════════════════════════════════════ */
-    let coursesOpen = false;
+    let coursesOpen = true;
 
     function toggleCourses() {
       coursesOpen = !coursesOpen;
@@ -2816,125 +1180,23 @@
       const toggle = document.getElementById('coursesToggle');
       if (coursesOpen) {
         body.style.maxHeight = body.scrollHeight + 'px';
+        // After transition ends, switch to 'none' so inner scroll isn't clipped
         body.addEventListener('transitionend', () => {
           if (coursesOpen) body.style.maxHeight = 'none';
         }, { once: true });
       } else {
+        // Snap back to px first so the collapse transition works
         body.style.maxHeight = body.scrollHeight + 'px';
         requestAnimationFrame(() => { body.style.maxHeight = '0'; });
       }
       toggle.classList.toggle('collapsed', !coursesOpen);
-      if (USE_API) debouncedSavePreferences();
     }
 
     /* ═══════════════════════════════════════════
-       Collapsible tags panel
+       Column header sort click
     ═══════════════════════════════════════════ */
-    let tagsOpen = false;
-
-    function toggleTags() {
-      tagsOpen = !tagsOpen;
-      const body   = document.getElementById('tagsBody');
-      const toggle = document.getElementById('tagsToggle');
-      if (tagsOpen) {
-        body.style.maxHeight = body.scrollHeight + 'px';
-        body.addEventListener('transitionend', () => {
-          if (tagsOpen) body.style.maxHeight = 'none';
-        }, { once: true });
-      } else {
-        body.style.maxHeight = body.scrollHeight + 'px';
-        requestAnimationFrame(() => { body.style.maxHeight = '0'; });
-      }
-      toggle.classList.toggle('collapsed', !tagsOpen);
-      if (USE_API) debouncedSavePreferences();
-    }
-
-    /* ═══════════════════════════════════════════
-       Column header sort click & resizable columns
-    ═══════════════════════════════════════════ */
-    const DEFAULT_COL_WIDTHS = { select: 40, text: 200, course: 140, category: 100, dueDate: 120, status: 100, actions: 96 };
-    const RESIZABLE_COLS = ['text', 'course', 'category', 'dueDate', 'status'];
-    const DEFAULT_COL_ORDER = ['text', 'course', 'category', 'dueDate', 'status'];
-
-    function loadColOrder() {
-      if (USE_API && userPreferences.colOrder && Array.isArray(userPreferences.colOrder) &&
-          userPreferences.colOrder.length === RESIZABLE_COLS.length &&
-          RESIZABLE_COLS.every(c => userPreferences.colOrder.includes(c))) return userPreferences.colOrder;
-      try {
-        const raw = localStorage.getItem('td_col_order');
-        if (raw) {
-          const parsed = JSON.parse(raw);
-          if (Array.isArray(parsed) && parsed.length === RESIZABLE_COLS.length &&
-              RESIZABLE_COLS.every(c => parsed.includes(c))) return parsed;
-        }
-      } catch (_) {}
-      return [...DEFAULT_COL_ORDER];
-    }
-
-    function saveColOrder(order) {
-      localStorage.setItem('td_col_order', JSON.stringify(order));
-      if (USE_API) debouncedSavePreferences();
-    }
-
-    function getColOrder() {
-      const ths = document.querySelectorAll('.overview-table thead th[data-col]');
-      return Array.from(ths).map(th => th.dataset.col);
-    }
-
-    function applyColOrder(order) {
-      const colgroup = document.querySelector('.overview-table colgroup');
-      const theadTr = document.querySelector('.overview-table thead tr');
-      if (!colgroup || !theadTr) return;
-      const selectCol = document.getElementById('col-select');
-      const actionsCol = document.getElementById('col-actions');
-      const dataCols = order.map(c => document.getElementById('col-' + c)).filter(Boolean);
-      const selectTh = theadTr.querySelector('.ov-select-cell');
-      const actionsTh = theadTr.querySelector('th:last-child');
-      const dataThs = order.map(c => theadTr.querySelector(`th[data-col="${c}"]`)).filter(Boolean);
-      colgroup.innerHTML = '';
-      if (selectCol) colgroup.appendChild(selectCol);
-      dataCols.forEach(c => colgroup.appendChild(c));
-      if (actionsCol) colgroup.appendChild(actionsCol);
-      while (theadTr.firstChild) theadTr.removeChild(theadTr.firstChild);
-      if (selectTh) theadTr.appendChild(selectTh);
-      dataThs.forEach(th => theadTr.appendChild(th));
-      if (actionsTh) theadTr.appendChild(actionsTh);
-    }
-
-    function loadColWidths() {
-      if (USE_API && userPreferences.colWidths && typeof userPreferences.colWidths === 'object' && Object.keys(userPreferences.colWidths).length) {
-        return { ...DEFAULT_COL_WIDTHS, ...userPreferences.colWidths };
-      }
-      try {
-        const raw = localStorage.getItem('td_col_widths');
-        if (raw) {
-          const parsed = JSON.parse(raw);
-          return { ...DEFAULT_COL_WIDTHS, ...parsed };
-        }
-      } catch (_) {}
-      return { ...DEFAULT_COL_WIDTHS };
-    }
-
-    function saveColWidths(widths) {
-      localStorage.setItem('td_col_widths', JSON.stringify(widths));
-      if (USE_API) debouncedSavePreferences();
-    }
-
-    function applyColWidths(widths) {
-      RESIZABLE_COLS.concat(['select', 'actions']).forEach(col => {
-        const colEl = document.getElementById('col-' + col);
-        if (colEl && widths[col]) colEl.style.width = widths[col] + 'px';
-      });
-    }
-
-    applyColWidths(loadColWidths());
-    applyColOrder(loadColOrder());
-
-    let justDraggedCol = false;
-    document.querySelectorAll('.overview-table thead th[data-col]').forEach(th => {
-      th.addEventListener('click', (e) => {
-        if (e.target.classList.contains('col-resizer')) return;
-        if (justDraggedCol) { justDraggedCol = false; return; }
+    document.querySelectorAll('thead th[data-col]').forEach(th => {
+      th.addEventListener('click', () => {
         const col    = th.dataset.col;
         const ovSort = document.getElementById('ovSort');
         const ovDir  = document.getElementById('ovDir');
@@ -2944,76 +1206,6 @@
           ovSort.value = col;
           ovDir.value  = 'asc';
         }
-        renderOverview();
-        if (USE_API) debouncedSavePreferences();
-      });
-    });
-
-    document.querySelectorAll('.overview-table .col-resizer').forEach(resizer => {
-      resizer.addEventListener('mousedown', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        const col = resizer.dataset.col;
-        if (!RESIZABLE_COLS.includes(col)) return;
-        const colEl = document.getElementById('col-' + col);
-        const th = resizer.closest('th');
-        if (!colEl || !th) return;
-        th.classList.add('resizing');
-        const startX = e.pageX;
-        const startW = colEl.offsetWidth;
-        const widths = loadColWidths();
-
-        function onMove(e) {
-          const dx = e.pageX - startX;
-          let w = Math.max(60, Math.min(400, startW + dx));
-          colEl.style.width = w + 'px';
-          widths[col] = w;
-        }
-        function onUp() {
-          th.classList.remove('resizing');
-          saveColWidths(widths);
-          document.removeEventListener('mousemove', onMove);
-          document.removeEventListener('mouseup', onUp);
-        }
-        document.addEventListener('mousemove', onMove);
-        document.addEventListener('mouseup', onUp);
-      });
-    });
-
-    let colDragSource = null;
-    document.querySelectorAll('.overview-table thead th[data-col]').forEach(th => {
-      th.addEventListener('dragstart', (e) => {
-        colDragSource = th.dataset.col;
-        e.dataTransfer.effectAllowed = 'move';
-        e.dataTransfer.setData('text/plain', th.dataset.col);
-        e.dataTransfer.setDragImage(th, 0, 0);
-        th.style.opacity = '0.5';
-      });
-      th.addEventListener('dragend', (e) => {
-        th.style.opacity = '';
-        document.querySelectorAll('.overview-table thead th[data-col]').forEach(h => h.classList.remove('drag-over'));
-        justDraggedCol = !!colDragSource;
-        colDragSource = null;
-      });
-      th.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        e.dataTransfer.dropEffect = 'move';
-        if (colDragSource && colDragSource !== th.dataset.col) th.classList.add('drag-over');
-      });
-      th.addEventListener('dragleave', () => th.classList.remove('drag-over'));
-      th.addEventListener('drop', (e) => {
-        e.preventDefault();
-        th.classList.remove('drag-over');
-        const targetCol = th.dataset.col;
-        if (!colDragSource || colDragSource === targetCol) return;
-        const order = getColOrder();
-        const fromIdx = order.indexOf(colDragSource);
-        const toIdx = order.indexOf(targetCol);
-        if (fromIdx < 0 || toIdx < 0) return;
-        order.splice(fromIdx, 1);
-        order.splice(toIdx, 0, colDragSource);
-        saveColOrder(order);
-        applyColOrder(order);
         renderOverview();
       });
     });
@@ -3026,30 +1218,12 @@
     const poohFloaties  = document.getElementById('poohFloaties');
     let   poohTimer     = null;
 
-    // Celebration GIFs — swap URLs if you have your own preferred GIFs
+    // Pooh Bear with party hat — swap this URL if you have your own preferred GIF
     const POOH_GIF     = 'https://i.giphy.com/9Y6n9TR7U07ew.gif';
-    const RUMMY_GIF    = 'https://media.giphy.com/media/ZU0uJyigkDnNSYTbEa/giphy.gif';
-    const DOG_GIF      = 'https://media.giphy.com/media/xjulTA8SOaEjjhSA81/giphy.gif';
-    const DOG_ICON     = 'https://cdn.svgrepo.com/show/109812/bichon-frise.svg';
     const POOH_TEXT    = '🎉 Task Complete! 🎉';
     const POOH_SUB     = 'Pooh Bear says great job! 🎂🍯';
-    const RUMMY_TEXT   = '🃏 Rummy Complete! 🃏';
-    const RUMMY_SUB    = 'Nice hand! ♠️♥️♦️♣️';
-    const DOG_TEXT     = '<img src="' + DOG_ICON + '" alt="shichon" class="pooh-dog-icon"> Walk Complete! <img src="' + DOG_ICON + '" alt="shichon" class="pooh-dog-icon">';
-    const DOG_SUB      = 'Good dog! <img src="' + DOG_ICON + '" alt="shichon" class="pooh-dog-icon">';
 
     const FLOATIE_ICONS = ['🎉','🎈','🎂','🍯','🎊','⭐','🎈','🎉','🎂','🎊'];
-
-    function getCompletionGif(task) {
-      if (!task) return { gif: POOH_GIF, text: POOH_TEXT, sub: POOH_SUB };
-      const text = (task.text || '').toLowerCase();
-      const parent = task.parentId ? tasks.find(x => x.id === task.parentId) : null;
-      const parentText = parent ? (parent.text || '').toLowerCase() : '';
-      const combined = text + ' ' + parentText;
-      if (/\b(rummy|playing cards?|card game|cards)\b/.test(combined)) return { gif: RUMMY_GIF, text: RUMMY_TEXT, sub: RUMMY_SUB };
-      if (/\b(walk(ing)?\s+(a\s+)?(the\s+)?(dog|puppy)|walk\s+dog|walk\s+puppy|dog|puppy|shichon|schnauzer|schauzer|schison)\b/.test(combined)) return { gif: DOG_GIF, text: DOG_TEXT, sub: DOG_SUB };
-      return { gif: POOH_GIF, text: POOH_TEXT, sub: POOH_SUB };
-    }
 
     function spawnFloaties() {
       poohFloaties.innerHTML = '';
@@ -3067,13 +1241,12 @@
       });
     }
 
-    function launchFireworks(task) {
+    function launchFireworks() {
       if (poohTimer) { clearTimeout(poohTimer); poohTimer = null; }
-      const { gif, text, sub } = getCompletionGif(task);
 
-      document.getElementById('poohGif').src             = gif;
-      document.getElementById('poohText').innerHTML       = text;
-      document.getElementById('poohSub').innerHTML       = sub;
+      document.getElementById('poohGif').src             = POOH_GIF;
+      document.getElementById('poohText').textContent    = POOH_TEXT;
+      document.getElementById('poohSub').textContent     = POOH_SUB;
 
       // Spawn floating icons
       spawnFloaties();
@@ -3116,17 +1289,12 @@
       if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); addCourse(); }
     });
 
-    document.getElementById('addTagBtn').addEventListener('click', addTag);
-    document.getElementById('tagName').addEventListener('keydown', e => { if (e.key === 'Enter') addTag(); });
-
     document.getElementById('addTaskBtn').addEventListener('click', addTask);
     document.getElementById('newTask').addEventListener('keydown', e => { if (e.key === 'Enter') addTask(); });
 
 
     document.getElementById('coursesToggle').addEventListener('click', toggleCourses);
-    document.getElementById('tagsToggle').addEventListener('click', toggleTags);
     document.getElementById('toggleOverviewBtn').addEventListener('click', toggleOverview);
-    document.getElementById('leftPanelToggle').addEventListener('click', toggleLeftPanel);
 
     document.getElementById('resetBtn').addEventListener('click', () => {
       if (!confirm('Clear all tasks? This cannot be undone.')) return;
@@ -3135,140 +1303,18 @@
       renderTasks();
     });
 
-    document.getElementById('editModalCancel').addEventListener('click', closeEditModal);
-    document.getElementById('editModalSave').addEventListener('click', saveEditModal);
-    document.getElementById('editModalOverlay').addEventListener('click', e => {
-      if (e.target === document.getElementById('editModalOverlay')) closeEditModal();
-    });
-    document.addEventListener('keydown', e => {
-      if (e.key === 'Escape' && document.getElementById('editModalOverlay').classList.contains('visible')) closeEditModal();
-    });
-
-    document.getElementById('importCsvBtn').addEventListener('click', () => document.getElementById('csvFileInput').click());
-    document.getElementById('csvFileInput').addEventListener('change', e => {
-      const f = e.target.files[0];
-      if (f) { importFromCSV(f); e.target.value = ''; }
-    });
-
-    document.getElementById('ovSort').addEventListener('change', () => { renderOverview(); if (USE_API) debouncedSavePreferences(); });
-    document.getElementById('ovDir').addEventListener('change', () => { renderOverview(); if (USE_API) debouncedSavePreferences(); });
-    document.getElementById('ovFilterDate').addEventListener('change', () => {
-      const sel = document.getElementById('ovFilterDate');
-      const picker = document.getElementById('ovFilterDateSpecific');
-      picker.style.display = sel.value === 'specific' ? '' : 'none';
-      if (sel.value === 'specific' && !picker.value) picker.value = todayStr();
-      renderOverview();
-      if (USE_API) debouncedSavePreferences();
-    });
-    document.getElementById('ovFilterDateSpecific').addEventListener('change', () => { renderOverview(); if (USE_API) debouncedSavePreferences(); });
-    document.getElementById('ovFilterStatus').addEventListener('change', () => { renderOverview(); if (USE_API) debouncedSavePreferences(); });
-    document.getElementById('ovFilterCategory').addEventListener('change', () => { renderOverview(); if (USE_API) debouncedSavePreferences(); });
-    document.getElementById('ovFilterCourse').addEventListener('change', () => { renderOverview(); if (USE_API) debouncedSavePreferences(); });
-    document.getElementById('ovFilterSubtask').addEventListener('change', () => { renderOverview(); if (USE_API) debouncedSavePreferences(); });
-
-    document.getElementById('bulkSelectAll').addEventListener('change', bulkSelectAllChange);
-    document.getElementById('bulkApplyBtn').addEventListener('click', bulkApply);
-    document.getElementById('bulkClearSelection').addEventListener('click', bulkClearSelection);
+    document.getElementById('ovSort').addEventListener('change', renderOverview);
+    document.getElementById('ovDir').addEventListener('change', renderOverview);
+    document.getElementById('ovFilterDate').addEventListener('change', renderOverview);
+    document.getElementById('ovFilterStatus').addEventListener('change', renderOverview);
 
     /* ═══════════════════════════════════════════
        Init
     ═══════════════════════════════════════════ */
-    document.getElementById('coursesBody').style.maxHeight = '0';
-    document.getElementById('coursesToggle').classList.add('collapsed');
-    document.getElementById('tagsBody').style.maxHeight = '0';
-    document.getElementById('tagsToggle').classList.add('collapsed');
+    document.getElementById('coursesBody').style.maxHeight = 'none';
 
-    async function doAuthInit() {
-      const token = getToken();
-      if (!token) { showAuthOverlay(); return; }
-      try {
-        const r = await apiFetch('/api/me');
-        if (!r.ok) throw new Error();
-        const me = await r.json();
-        setUserEmail(me?.email ?? me?.user?.email ?? '');
-        await loadDataFromApi();
-        hideAuthOverlay();
-        renderCourses();
-        renderTags();
-        renderTasks();
-        if (Object.keys(userPreferences).length) applyPreferences(userPreferences);
-        renderOverview();
-      } catch {
-        showAuthOverlay();
-      }
-    }
-
-    function onAuthSuccess() {
-      hideAuthOverlay();
-      renderCourses();
-      renderTags();
-      renderTasks();
-      if (Object.keys(userPreferences).length) applyPreferences(userPreferences);
-      renderOverview();
-    }
-
-    if (USE_API) {
-      async function parseAuthResponse(r) {
-        const text = await r.text();
-        try {
-          return text ? JSON.parse(text) : {};
-        } catch {
-          if (r.status === 404) throw new Error('API not found. Run "npm run api" and open http://localhost:3001, or use ' + API_URL);
-          throw new Error('Server error. Make sure the API is running.');
-        }
-      }
-      document.getElementById('authLoginBtn').addEventListener('click', async () => {
-        const email = document.getElementById('authEmail').value.trim();
-        const password = document.getElementById('authPassword').value;
-        document.getElementById('authError').textContent = '';
-        if (!email || !password) { document.getElementById('authError').textContent = 'Email and password required'; return; }
-        try {
-          const r = await fetch(API_BASE + '/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password }) });
-          const data = await parseAuthResponse(r);
-          if (!r.ok) throw new Error(data.error || 'Login failed');
-          setToken(data.token);
-          setUserEmail((data.user?.email ?? data.email ?? email) || '');
-          await loadDataFromApi();
-          onAuthSuccess();
-        } catch (e) {
-          document.getElementById('authError').textContent = e.message || 'Login failed';
-        }
-      });
-      document.getElementById('authRegisterBtn').addEventListener('click', async () => {
-        const email = document.getElementById('authEmail').value.trim();
-        const password = document.getElementById('authPassword').value;
-        document.getElementById('authError').textContent = '';
-        if (!email || !password) { document.getElementById('authError').textContent = 'Email and password required'; return; }
-        try {
-          const r = await fetch(API_BASE + '/api/auth/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password }) });
-          const data = await parseAuthResponse(r);
-          if (!r.ok) throw new Error(data.error || 'Registration failed');
-          setToken(data.token);
-          setUserEmail((data.user?.email ?? data.email ?? email) || '');
-          await loadDataFromApi();
-          onAuthSuccess();
-        } catch (e) {
-          document.getElementById('authError').textContent = e.message || 'Registration failed';
-        }
-      });
-      document.getElementById('logoutBtn').addEventListener('click', () => {
-        clearToken();
-        setUserEmail('');
-        courses = [];
-        tasks = [];
-        tags = [];
-        userPreferences = {};
-        document.getElementById('authEmail').value = '';
-        document.getElementById('authPassword').value = '';
-        document.getElementById('authError').textContent = '';
-        showAuthOverlay();
-      });
-      doAuthInit();
-    } else {
-      renderCourses();
-      renderTags();
-      renderTasks();
-    }
+    renderCourses();
+    renderTasks();
   </script>
 </body>
 </html>

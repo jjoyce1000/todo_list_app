@@ -20,6 +20,18 @@ function authMiddleware(req, res, next) {
   next();
 }
 
+async function adminMiddleware(req, res, next) {
+  const user = await db.get('SELECT id, role FROM users WHERE id = ?', req.userId);
+  if (!user || user.role !== 'admin') return res.status(403).json({ error: 'Admin access required' });
+  next();
+}
+
+async function ensureAdminByEmail(email) {
+  const adminEmail = process.env.ADMIN_EMAIL;
+  if (!adminEmail || !email) return;
+  await db.run('UPDATE users SET role = ? WHERE LOWER(email) = LOWER(?)', 'admin', adminEmail.trim());
+}
+
 function taskRowToObj(row) {
   return {
     id: row.id,
@@ -37,8 +49,10 @@ app.post('/api/auth/register', async (req, res) => {
     const { email, password } = req.body;
     if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
     const result = await auth.register(email, password);
+    await ensureAdminByEmail(email);
     if (usePostgres) db.run('INSERT INTO usage_log (user_id) VALUES (?)', result.id).catch(() => {});
-    res.json({ user: { id: result.id, email: result.email }, token: result.token });
+    const user = await db.get('SELECT id, email, role FROM users WHERE id = ?', result.id);
+    res.json({ user: { id: user.id, email: user.email, role: user.role || 'user' }, token: result.token });
   } catch (e) {
     res.status(400).json({ error: e.message });
   }
@@ -49,17 +63,19 @@ app.post('/api/auth/login', async (req, res) => {
     const { email, password } = req.body;
     if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
     const result = await auth.login(email, password);
+    await ensureAdminByEmail(email);
     if (usePostgres) db.run('INSERT INTO usage_log (user_id) VALUES (?)', result.id).catch(() => {});
-    res.json({ user: { id: result.id, email: result.email }, token: result.token });
+    const user = await db.get('SELECT id, email, role FROM users WHERE id = ?', result.id);
+    res.json({ user: { id: user.id, email: user.email, role: user.role || 'user' }, token: result.token });
   } catch (e) {
     res.status(401).json({ error: e.message });
   }
 });
 
 app.get('/api/me', authMiddleware, async (req, res) => {
-  const user = await db.get('SELECT id, email FROM users WHERE id = ?', req.userId);
+  const user = await db.get('SELECT id, email, role FROM users WHERE id = ?', req.userId);
   if (!user) return res.status(404).json({ error: 'User not found' });
-  res.json(user);
+  res.json({ id: user.id, email: user.email, role: user.role || 'user' });
 });
 
 app.get('/api/courses', authMiddleware, async (req, res) => {
@@ -221,10 +237,8 @@ app.post('/api/sync', authMiddleware, async (req, res) => {
   }
 });
 
-app.get('/api/admin/stats', async (req, res) => {
+app.get('/api/admin/stats', authMiddleware, adminMiddleware, async (req, res) => {
   if (!usePostgres) return res.status(404).json({ error: 'Not found' });
-  const key = process.env.RENDER_STATS_KEY;
-  if (key && req.headers['x-stats-key'] !== key) return res.status(401).json({ error: 'Unauthorized' });
   try {
     const totalRow = await db.get('SELECT COUNT(DISTINCT user_id) as n FROM usage_log');
     const rows = await db.all(
@@ -241,6 +255,10 @@ app.get('/api/admin/stats', async (req, res) => {
 });
 
 app.use(express.static(path.join(__dirname, '..')));
+
+app.get('/admin', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'admin.html'));
+});
 
 app.get('*', (req, res) => {
   if (!req.path.startsWith('/api')) {
