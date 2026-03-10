@@ -37,6 +37,7 @@ app.post('/api/auth/register', async (req, res) => {
     const { email, password } = req.body;
     if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
     const result = await auth.register(email, password);
+    if (usePostgres) db.run('INSERT INTO usage_log (user_id) VALUES (?)', result.id).catch(() => {});
     res.json({ user: { id: result.id, email: result.email }, token: result.token });
   } catch (e) {
     res.status(400).json({ error: e.message });
@@ -48,6 +49,7 @@ app.post('/api/auth/login', async (req, res) => {
     const { email, password } = req.body;
     if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
     const result = await auth.login(email, password);
+    if (usePostgres) db.run('INSERT INTO usage_log (user_id) VALUES (?)', result.id).catch(() => {});
     res.json({ user: { id: result.id, email: result.email }, token: result.token });
   } catch (e) {
     res.status(401).json({ error: e.message });
@@ -126,6 +128,9 @@ app.get('/api/tasks', authMiddleware, async (req, res) => {
 });
 
 app.get('/api/data', authMiddleware, async (req, res) => {
+  if (usePostgres) {
+    db.run('INSERT INTO usage_log (user_id) VALUES (?)', req.userId).catch(() => {});
+  }
   const courses = await db.all('SELECT id, name, description FROM courses WHERE user_id = ?', req.userId);
   const tags = await db.all('SELECT id, name, color FROM tags WHERE user_id = ?', req.userId);
   const taskRows = await db.all('SELECT id, text, due_date, course_id, category, done, parent_id FROM tasks WHERE user_id = ?', req.userId);
@@ -213,6 +218,25 @@ app.post('/api/sync', authMiddleware, async (req, res) => {
   } catch (err) {
     console.error('Sync error:', err);
     res.status(500).json({ error: err.message || 'Sync failed' });
+  }
+});
+
+app.get('/api/admin/stats', async (req, res) => {
+  if (!usePostgres) return res.status(404).json({ error: 'Not found' });
+  const key = process.env.RENDER_STATS_KEY;
+  if (key && req.headers['x-stats-key'] !== key) return res.status(401).json({ error: 'Unauthorized' });
+  try {
+    const totalRow = await db.get('SELECT COUNT(DISTINCT user_id) as n FROM usage_log');
+    const rows = await db.all(
+      'SELECT u.email, COUNT(l.id) as usage_count FROM usage_log l JOIN users u ON l.user_id = u.id GROUP BY l.user_id, u.email ORDER BY usage_count DESC'
+    );
+    res.json({
+      totalAccounts: totalRow?.n ?? 0,
+      accounts: rows.map(r => ({ email: r.email, usageCount: r.usage_count }))
+    });
+  } catch (err) {
+    console.error('Stats error:', err);
+    res.status(500).json({ error: 'Stats failed' });
   }
 });
 

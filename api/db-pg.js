@@ -84,6 +84,8 @@ async function init() {
       CREATE INDEX IF NOT EXISTS idx_tasks_user ON tasks(user_id);
       CREATE INDEX IF NOT EXISTS idx_tasks_parent ON tasks(parent_id);
       CREATE TABLE IF NOT EXISTS user_preferences (user_id TEXT PRIMARY KEY, prefs TEXT DEFAULT '{}');
+      CREATE TABLE IF NOT EXISTS usage_log (id SERIAL PRIMARY KEY, user_id TEXT NOT NULL, created_at TIMESTAMPTZ DEFAULT NOW());
+      CREATE INDEX IF NOT EXISTS idx_usage_log_user ON usage_log(user_id);
     `);
   } finally {
     client.release();
