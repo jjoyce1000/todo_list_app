@@ -30,17 +30,17 @@ function verifyToken(token) {
   }
 }
 
-function register(email, password) {
-  const existing = db.prepare('SELECT id FROM users WHERE email = ?').get(email.toLowerCase());
+async function register(email, password) {
+  const existing = await db.get('SELECT id FROM users WHERE email = ?', email.toLowerCase());
   if (existing) throw new Error('Email already registered');
   const id = genId();
   const hash = hashPassword(password);
-  db.prepare('INSERT INTO users (id, email, password_hash) VALUES (?, ?, ?)').run(id, email.toLowerCase(), hash);
+  await db.run('INSERT INTO users (id, email, password_hash) VALUES (?, ?, ?)', id, email.toLowerCase(), hash);
   return { id, email: email.toLowerCase(), token: createToken(id) };
 }
 
-function login(email, password) {
-  const user = db.prepare('SELECT id, email, password_hash FROM users WHERE email = ?').get(email.toLowerCase());
+async function login(email, password) {
+  const user = await db.get('SELECT id, email, password_hash FROM users WHERE email = ?', email.toLowerCase());
   if (!user || !verifyPassword(password, user.password_hash)) throw new Error('Invalid email or password');
   return { id: user.id, email: user.email, token: createToken(user.id) };
 }

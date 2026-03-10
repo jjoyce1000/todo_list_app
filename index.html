@@ -1656,6 +1656,111 @@
       if (!r.ok) throw new Error('Sync failed');
     }
 
+    let userPreferences = {};
+    let prefsDebounceTimer = null;
+    function debouncedSavePreferences() {
+      if (!USE_API) return;
+      if (prefsDebounceTimer) clearTimeout(prefsDebounceTimer);
+      prefsDebounceTimer = setTimeout(() => {
+        prefsDebounceTimer = null;
+        const prefs = getPreferencesFromUI();
+        apiFetch('/api/preferences', { method: 'PUT', body: JSON.stringify({ preferences: prefs }) }).then(r => { if (!r.ok) throw new Error(); }).catch(() => {});
+      }, 400);
+    }
+    function getPreferencesFromUI() {
+      const RESIZABLE_COLS = ['text', 'course', 'category', 'dueDate', 'status'];
+      const DEFAULT_COL_WIDTHS = { select: 40, text: 200, course: 140, category: 100, dueDate: 120, status: 100, actions: 96 };
+      const widths = {};
+      RESIZABLE_COLS.concat(['select', 'actions']).forEach(col => {
+        const el = document.getElementById('col-' + col);
+        if (el && el.style.width) widths[col] = parseInt(el.style.width, 10) || DEFAULT_COL_WIDTHS[col];
+      });
+      const order = getColOrder ? getColOrder() : [];
+      return {
+        colOrder: order.length ? order : ['text', 'course', 'category', 'dueDate', 'status'],
+        colWidths: Object.keys(widths).length ? widths : {},
+        overviewVisible: typeof overviewVisible !== 'undefined' ? overviewVisible : true,
+        leftPanelCollapsed: typeof leftPanelCollapsed !== 'undefined' ? leftPanelCollapsed : false,
+        sortCol: document.getElementById('ovSort')?.value || 'dueDate',
+        sortDir: document.getElementById('ovDir')?.value || 'asc',
+        filterDate: document.getElementById('ovFilterDate')?.value || '',
+        filterDateSpecific: document.getElementById('ovFilterDateSpecific')?.value || '',
+        filterStatus: document.getElementById('ovFilterStatus')?.value || '',
+        filterCategory: document.getElementById('ovFilterCategory')?.value || '',
+        filterCourse: document.getElementById('ovFilterCourse')?.value || '',
+        filterSubtask: document.getElementById('ovFilterSubtask')?.value || '',
+        coursesOpen: typeof coursesOpen !== 'undefined' ? coursesOpen : false,
+        tagsOpen: typeof tagsOpen !== 'undefined' ? tagsOpen : false
+      };
+    }
+    function applyPreferences(prefs) {
+      if (!prefs || typeof prefs !== 'object') return;
+      userPreferences = prefs;
+      if (prefs.colOrder && Array.isArray(prefs.colOrder)) applyColOrder(prefs.colOrder);
+      if (prefs.colWidths && typeof prefs.colWidths === 'object' && Object.keys(prefs.colWidths).length) {
+        const DEFAULT_COL_WIDTHS = { select: 40, text: 200, course: 140, category: 100, dueDate: 120, status: 100, actions: 96 };
+        applyColWidths({ ...DEFAULT_COL_WIDTHS, ...prefs.colWidths });
+      }
+      if (typeof prefs.overviewVisible === 'boolean') {
+        overviewVisible = prefs.overviewVisible;
+        const pane = document.getElementById('rightPane');
+        const wrapper = document.getElementById('appWrapper');
+        const btn = document.getElementById('toggleOverviewBtn');
+        if (pane && wrapper && btn) {
+          pane.classList.toggle('hidden', !overviewVisible);
+          wrapper.classList.toggle('overview-hidden', !overviewVisible);
+          btn.textContent = overviewVisible ? 'Hide Overview' : 'Show Overview';
+        }
+      }
+      if (typeof prefs.leftPanelCollapsed === 'boolean') {
+        leftPanelCollapsed = prefs.leftPanelCollapsed;
+        const pane = document.getElementById('leftPane');
+        const wrapper = document.getElementById('appWrapper');
+        const btn = document.getElementById('leftPanelToggle');
+        if (pane && wrapper && btn) {
+          pane.classList.toggle('collapsed', leftPanelCollapsed);
+          wrapper.classList.toggle('left-panel-collapsed', leftPanelCollapsed);
+          btn.textContent = leftPanelCollapsed ? '▶ Expand' : '◀ Collapse';
+          btn.title = leftPanelCollapsed ? 'Expand panel' : 'Collapse panel';
+        }
+      }
+      const ovSort = document.getElementById('ovSort');
+      const ovDir = document.getElementById('ovDir');
+      if (ovSort && prefs.sortCol) ovSort.value = prefs.sortCol;
+      if (ovDir && prefs.sortDir) ovDir.value = prefs.sortDir;
+      const filterDate = document.getElementById('ovFilterDate');
+      const filterDateSpecific = document.getElementById('ovFilterDateSpecific');
+      if (filterDate && prefs.filterDate) filterDate.value = prefs.filterDate;
+      if (filterDateSpecific && prefs.filterDateSpecific) filterDateSpecific.value = prefs.filterDateSpecific;
+      if (filterDateSpecific) filterDateSpecific.style.display = (prefs.filterDate === 'specific') ? '' : 'none';
+      const filterStatus = document.getElementById('ovFilterStatus');
+      const filterCategory = document.getElementById('ovFilterCategory');
+      const filterCourse = document.getElementById('ovFilterCourse');
+      const filterSubtask = document.getElementById('ovFilterSubtask');
+      if (filterStatus && prefs.filterStatus) filterStatus.value = prefs.filterStatus;
+      if (filterCategory && prefs.filterCategory) filterCategory.value = prefs.filterCategory;
+      if (filterCourse && prefs.filterCourse) filterCourse.value = prefs.filterCourse;
+      if (filterSubtask && prefs.filterSubtask) filterSubtask.value = prefs.filterSubtask;
+      if (typeof prefs.coursesOpen === 'boolean') {
+        coursesOpen = prefs.coursesOpen;
+        const body = document.getElementById('coursesBody');
+        const toggle = document.getElementById('coursesToggle');
+        if (body && toggle) {
+          body.style.maxHeight = coursesOpen ? '' : '0';
+          toggle.classList.toggle('collapsed', !coursesOpen);
+        }
+      }
+      if (typeof prefs.tagsOpen === 'boolean') {
+        tagsOpen = prefs.tagsOpen;
+        const body = document.getElementById('tagsBody');
+        const toggle = document.getElementById('tagsToggle');
+        if (body && toggle) {
+          body.style.maxHeight = tagsOpen ? '' : '0';
+          toggle.classList.toggle('collapsed', !tagsOpen);
+        }
+      }
+    }
+
     async function loadDataFromApi() {
       const res = await apiFetch('/api/data');
       if (!res.ok) throw new Error('Failed to load data');
@@ -1676,6 +1781,7 @@
         tags = DEFAULT_TAGS.map(t => ({ id: genId(), name: t.name, color: t.color }));
         debouncedSync();
       }
+      if (data.preferences) userPreferences = data.preferences;
     }
 
     function showAuthOverlay() {
@@ -2603,6 +2709,7 @@
       wrapper.classList.toggle('left-panel-collapsed', leftPanelCollapsed);
       btn.textContent = leftPanelCollapsed ? '▶ Expand' : '◀ Collapse';
       btn.title      = leftPanelCollapsed ? 'Expand panel' : 'Collapse panel';
+      if (USE_API) debouncedSavePreferences();
     }
 
     function toggleOverview() {
@@ -2613,6 +2720,7 @@
       pane.classList.toggle('hidden', !overviewVisible);
       wrapper.classList.toggle('overview-hidden', !overviewVisible);
       btn.textContent = overviewVisible ? 'Hide Overview' : 'Show Overview';
+      if (USE_API) debouncedSavePreferences();
     }
 
     /* ═══════════════════════════════════════════
@@ -2626,16 +2734,15 @@
       const toggle = document.getElementById('coursesToggle');
       if (coursesOpen) {
         body.style.maxHeight = body.scrollHeight + 'px';
-        // After transition ends, switch to 'none' so inner scroll isn't clipped
         body.addEventListener('transitionend', () => {
           if (coursesOpen) body.style.maxHeight = 'none';
         }, { once: true });
       } else {
-        // Snap back to px first so the collapse transition works
         body.style.maxHeight = body.scrollHeight + 'px';
         requestAnimationFrame(() => { body.style.maxHeight = '0'; });
       }
       toggle.classList.toggle('collapsed', !coursesOpen);
+      if (USE_API) debouncedSavePreferences();
     }
 
     /* ═══════════════════════════════════════════
@@ -2657,6 +2764,7 @@
         requestAnimationFrame(() => { body.style.maxHeight = '0'; });
       }
       toggle.classList.toggle('collapsed', !tagsOpen);
+      if (USE_API) debouncedSavePreferences();
     }
 
     /* ═══════════════════════════════════════════
@@ -2667,6 +2775,9 @@
     const DEFAULT_COL_ORDER = ['text', 'course', 'category', 'dueDate', 'status'];
 
     function loadColOrder() {
+      if (USE_API && userPreferences.colOrder && Array.isArray(userPreferences.colOrder) &&
+          userPreferences.colOrder.length === RESIZABLE_COLS.length &&
+          RESIZABLE_COLS.every(c => userPreferences.colOrder.includes(c))) return userPreferences.colOrder;
       try {
         const raw = localStorage.getItem('td_col_order');
         if (raw) {
@@ -2680,6 +2791,7 @@
 
     function saveColOrder(order) {
       localStorage.setItem('td_col_order', JSON.stringify(order));
+      if (USE_API) debouncedSavePreferences();
     }
 
     function getColOrder() {
@@ -2708,6 +2820,9 @@
     }
 
     function loadColWidths() {
+      if (USE_API && userPreferences.colWidths && typeof userPreferences.colWidths === 'object' && Object.keys(userPreferences.colWidths).length) {
+        return { ...DEFAULT_COL_WIDTHS, ...userPreferences.colWidths };
+      }
       try {
         const raw = localStorage.getItem('td_col_widths');
         if (raw) {
@@ -2720,6 +2835,7 @@
 
     function saveColWidths(widths) {
       localStorage.setItem('td_col_widths', JSON.stringify(widths));
+      if (USE_API) debouncedSavePreferences();
     }
 
     function applyColWidths(widths) {
@@ -2747,6 +2863,7 @@
           ovDir.value  = 'asc';
         }
         renderOverview();
+        if (USE_API) debouncedSavePreferences();
       });
     });
 
@@ -2951,20 +3068,21 @@
       if (f) { importFromCSV(f); e.target.value = ''; }
     });
 
-    document.getElementById('ovSort').addEventListener('change', renderOverview);
-    document.getElementById('ovDir').addEventListener('change', renderOverview);
+    document.getElementById('ovSort').addEventListener('change', () => { renderOverview(); if (USE_API) debouncedSavePreferences(); });
+    document.getElementById('ovDir').addEventListener('change', () => { renderOverview(); if (USE_API) debouncedSavePreferences(); });
     document.getElementById('ovFilterDate').addEventListener('change', () => {
       const sel = document.getElementById('ovFilterDate');
       const picker = document.getElementById('ovFilterDateSpecific');
       picker.style.display = sel.value === 'specific' ? '' : 'none';
       if (sel.value === 'specific' && !picker.value) picker.value = todayStr();
       renderOverview();
+      if (USE_API) debouncedSavePreferences();
     });
-    document.getElementById('ovFilterDateSpecific').addEventListener('change', renderOverview);
-    document.getElementById('ovFilterStatus').addEventListener('change', renderOverview);
-    document.getElementById('ovFilterCategory').addEventListener('change', renderOverview);
-    document.getElementById('ovFilterCourse').addEventListener('change', renderOverview);
-    document.getElementById('ovFilterSubtask').addEventListener('change', renderOverview);
+    document.getElementById('ovFilterDateSpecific').addEventListener('change', () => { renderOverview(); if (USE_API) debouncedSavePreferences(); });
+    document.getElementById('ovFilterStatus').addEventListener('change', () => { renderOverview(); if (USE_API) debouncedSavePreferences(); });
+    document.getElementById('ovFilterCategory').addEventListener('change', () => { renderOverview(); if (USE_API) debouncedSavePreferences(); });
+    document.getElementById('ovFilterCourse').addEventListener('change', () => { renderOverview(); if (USE_API) debouncedSavePreferences(); });
+    document.getElementById('ovFilterSubtask').addEventListener('change', () => { renderOverview(); if (USE_API) debouncedSavePreferences(); });
 
     document.getElementById('bulkSelectAll').addEventListener('change', bulkSelectAllChange);
     document.getElementById('bulkApplyBtn').addEventListener('click', bulkApply);
@@ -2989,6 +3107,8 @@
         renderCourses();
         renderTags();
         renderTasks();
+        if (Object.keys(userPreferences).length) applyPreferences(userPreferences);
+        renderOverview();
       } catch {
         showAuthOverlay();
       }
@@ -2999,6 +3119,8 @@
       renderCourses();
       renderTags();
       renderTasks();
+      if (Object.keys(userPreferences).length) applyPreferences(userPreferences);
+      renderOverview();
     }
 
     if (USE_API) {
@@ -3048,6 +3170,10 @@
         courses = [];
         tasks = [];
         tags = [];
+        userPreferences = {};
+        document.getElementById('authEmail').value = '';
+        document.getElementById('authPassword').value = '';
+        document.getElementById('authError').textContent = '';
         showAuthOverlay();
       });
       doAuthInit();
