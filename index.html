@@ -79,6 +79,23 @@
       color: white;
     }
 
+    .import-csv-btn {
+      padding: 0.45rem 0.9rem;
+      border: 1.5px solid #27ae60;
+      border-radius: 7px;
+      background: white;
+      color: #27ae60;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.15s, color 0.15s;
+    }
+    .import-csv-btn:hover {
+      background: #27ae60;
+      color: white;
+    }
+
     .admin-link {
       padding: 0.45rem 0.9rem;
       border: 1.5px solid #7f8c8d;
@@ -205,6 +222,7 @@
       .header-actions .logout-btn,
       .header-actions .admin-link,
       .toggle-overview-btn,
+      .import-csv-btn,
       .reset-btn {
         min-height: 44px;
         min-width: 44px;
@@ -897,9 +915,11 @@
       <button class="login-btn" id="loginBtn" style="display:none">Log in</button>
       <button class="admin-link" id="adminBtn" style="display:none" title="Admin – usage stats">Admin</button>
       <button class="toggle-overview-btn" id="toggleOverviewBtn">Hide Overview</button>
+      <button class="import-csv-btn" id="csvImportBtn" title="Import tasks from CSV">📥 Import CSV</button>
       <button class="reset-btn" id="resetBtn">🗑 Reset All Tasks</button>
     </div>
   </div>
+  <input type="file" id="csvImportInput" accept=".csv" style="display:none">
 
   <div class="app-wrapper" id="appWrapper">
 
@@ -949,10 +969,7 @@
           </div>
         </div>
         <button class="btn-primary btn-full" id="addTaskBtn">Add Task</button>
-        <div class="section-label" style="margin-top:1rem">Import</div>
-        <input type="file" id="csvImportInput" accept=".csv" style="display:none">
-        <button class="toggle-overview-btn btn-full" id="csvImportBtn">📥 Import CSV</button>
-        <p class="import-hint">Format: Category, Task, Course, Due Date, Status</p>
+        <p class="import-hint">CSV format: Category, Task, Course, Due Date, Status</p>
       </div>
 
     </div><!-- /left-pane -->
