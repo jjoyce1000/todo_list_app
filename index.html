@@ -1622,8 +1622,8 @@
        API & Auth
     ═══════════════════════════════════════════ */
     const USE_API = (window.location.protocol === 'http:' || window.location.protocol === 'https:');
-    const API_PORT = '3001';
-    const API_BASE = (USE_API && window.location.port !== API_PORT) ? `http://localhost:${API_PORT}` : '';
+    const API_URL = 'https://todo-list-app-rrjb.onrender.com';
+    const API_BASE = (USE_API && window.location.origin !== API_URL && window.location.origin !== 'http://localhost:3001') ? API_URL : '';
 
     function getToken() { return localStorage.getItem('td_token'); }
     function setToken(t) { localStorage.setItem('td_token', t); }
@@ -1648,6 +1648,12 @@
           body: JSON.stringify({ courses, tags, tasks })
         }).then(r => { if (!r.ok) throw new Error('Sync failed'); }).catch(() => {});
       }, 300);
+    }
+    async function syncImmediate() {
+      if (!USE_API) return;
+      if (saveDebounceTimer) { clearTimeout(saveDebounceTimer); saveDebounceTimer = null; }
+      const r = await apiFetch('/api/sync', { method: 'POST', body: JSON.stringify({ courses, tags, tasks }) });
+      if (!r.ok) throw new Error('Sync failed');
     }
 
     async function loadDataFromApi() {
@@ -2513,7 +2519,7 @@
 
     function importFromCSV(file) {
       const reader = new FileReader();
-      reader.onload = e => {
+      reader.onload = async e => {
         const text = e.target.result;
         const rows = parseCSV(text);
         if (rows.length < 2) { alert('CSV must have a header row and at least one data row.'); return; }
@@ -2521,8 +2527,9 @@
         const ci = header.findIndex(h => h === 'category' || h === 'course');
         const ti = header.findIndex(h => h === 'task');
         const tagi = header.findIndex(h => h === 'tag' || h === 'tags');
-        const di = header.findIndex(h => h === 'duedate');
+        const di = header.findIndex(h => h === 'duedate' || h === 'due');
         const si = header.findIndex(h => h === 'status');
+        const pi = header.findIndex(h => h === 'parent' || h === 'parenttask');
         if (ci < 0 || ti < 0 || tagi < 0 || di < 0 || si < 0) {
           alert('CSV must have header columns: Category, Task, Tag, Due Date, Status');
           return;
@@ -2531,28 +2538,38 @@
           alert('CSV must have separate Category and Tag columns.');
           return;
         }
-        const CATEGORY_COL = 0, TASK_COL = 1, TAG_COL = 2, DUE_COL = 3, STATUS_COL = 4;
+        const CATEGORY_COL = 0, TASK_COL = 1, TAG_COL = 2, DUE_COL = 3, STATUS_COL = 4, PARENT_COL = 5;
         const useOrder = header.length >= 5 && header[0] === 'category' && header[1] === 'task' && header[2] === 'tag' && header[3] === 'duedate' && header[4] === 'status';
         const cCol = useOrder ? CATEGORY_COL : ci;
         const tCol = useOrder ? TASK_COL : ti;
         const tagCol = useOrder ? TAG_COL : tagi;
         const dCol = useOrder ? DUE_COL : di;
         const sCol = useOrder ? STATUS_COL : si;
+        const pCol = useOrder && header.length > 5 ? PARENT_COL : (pi >= 0 ? pi : -1);
+        const taskTextToId = {};
+        tasks.forEach(t => { if (!taskTextToId[t.text]) taskTextToId[t.text] = t.id; });
         let added = 0;
         for (let i = 1; i < rows.length; i++) {
           const row = rows[i];
-          const textVal = row[tCol] || '';
-          if (!textVal.trim()) continue;
+          const textVal = (row[tCol] || '').trim();
+          if (!textVal) continue;
           const courseId = resolveCourseId(row[cCol] || '');
           const dueDate  = parseDate(row[dCol] || '');
           const statusVal = (row[sCol] || '').toLowerCase();
           const done = statusVal.includes('complete') || statusVal.includes('done') || statusVal === '1';
           const tagVal = (row[tagCol] || '').trim();
           const taskTag = tagVal ? resolveTagName(tagVal) : '';
-          tasks.push({ id: genId(), text: textVal.trim(), dueDate, courseId, category: taskTag, done });
+          const parentText = (pCol >= 0 && row[pCol]) ? (row[pCol] || '').trim() : '';
+          const parentId = parentText && taskTextToId[parentText] ? taskTextToId[parentText] : '';
+          const task = { id: genId(), text: textVal, dueDate, courseId, category: taskTag, done, parentId };
+          tasks.push(task);
+          if (!taskTextToId[textVal]) taskTextToId[textVal] = task.id;
           added++;
         }
         save();
+        if (USE_API) {
+          try { await syncImmediate(); } catch (err) { alert('Import saved locally but sync failed: ' + (err.message || 'Unknown error')); }
+        }
         renderCourses();
         renderTags();
         renderTasks();
@@ -2980,7 +2997,7 @@
         try {
           return text ? JSON.parse(text) : {};
         } catch {
-          if (r.status === 404) throw new Error('API not found. Run "npm run api" and open http://localhost:' + API_PORT);
+          if (r.status === 404) throw new Error('API not found. Run "npm run api" and open http://localhost:3001, or use ' + API_URL);
           throw new Error('Server error. Make sure the API is running.');
         }
       }

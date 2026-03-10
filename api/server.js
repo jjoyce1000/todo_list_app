@@ -104,8 +104,8 @@ app.put('/api/tags/:id', authMiddleware, (req, res) => {
   const { name, color } = req.body;
   const old = db.prepare('SELECT name FROM tags WHERE id = ? AND user_id = ?').get(req.params.id, req.userId);
   if (!old) return res.status(404).json({ error: 'Not found' });
-  if (name !== undefined) db.prepare('UPDATE tags SET name = ? WHERE id = ?').run(name, req.params.id);
-  if (color !== undefined) db.prepare('UPDATE tags SET color = ? WHERE id = ?').run(color, req.params.id);
+  if (name !== undefined) db.prepare('UPDATE tags SET name = ? WHERE id = ? AND user_id = ?').run(name, req.params.id, req.userId);
+  if (color !== undefined) db.prepare('UPDATE tags SET color = ? WHERE id = ? AND user_id = ?').run(color, req.params.id, req.userId);
   if (name !== undefined && name !== old.name) db.prepare('UPDATE tasks SET category = ? WHERE category = ? AND user_id = ?').run(name, old.name, req.userId);
   res.json({ ok: true });
 });
@@ -113,7 +113,7 @@ app.put('/api/tags/:id', authMiddleware, (req, res) => {
 app.delete('/api/tags/:id', authMiddleware, (req, res) => {
   const tag = db.prepare('SELECT name FROM tags WHERE id = ? AND user_id = ?').get(req.params.id, req.userId);
   if (tag) {
-    db.prepare('DELETE FROM tags WHERE id = ?').run(req.params.id);
+    db.prepare('DELETE FROM tags WHERE id = ? AND user_id = ?').run(req.params.id, req.userId);
     db.prepare('UPDATE tasks SET category = ? WHERE category = ? AND user_id = ?').run('', tag.name, req.userId);
   }
   res.json({ ok: true });
