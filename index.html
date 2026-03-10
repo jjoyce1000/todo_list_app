@@ -2,15 +2,19 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>To-Do List</title>
   <style>
     * { box-sizing: border-box; }
+    html { -webkit-text-size-adjust: 100%; }
 
     body {
       font-family: system-ui, -apple-system, sans-serif;
       margin: 0;
       padding: 1.5rem 1.25rem;
+      padding-left: max(1.25rem, env(safe-area-inset-left));
+      padding-right: max(1.25rem, env(safe-area-inset-right));
+      padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
       background: #f0f2f5;
       color: #222;
       min-height: 100vh;
@@ -142,8 +146,8 @@
       padding: 1.5rem 2rem;
       border-radius: 10px;
       box-shadow: 0 4px 20px rgba(0,0,0,0.2);
-      min-width: 400px;
-      max-width: 90vw;
+      min-width: min(400px, calc(100vw - 2rem));
+      max-width: calc(100vw - 2rem);
     }
     .admin-panel h3 { margin: 0 0 1rem; }
     .admin-panel .stats-result { margin-top: 1rem; }
@@ -174,6 +178,7 @@
 
     .right-pane.hidden { display: none; }
 
+    /* Tablet and below */
     @media (max-width: 820px) {
       .app-wrapper,
       .app-wrapper.overview-hidden {
@@ -181,7 +186,51 @@
       }
       .right-pane { position: static; }
       .header-actions { position: static; }
-      .page-header { flex-wrap: wrap; }
+      .page-header { flex-wrap: wrap; justify-content: space-between; gap: 0.75rem; }
+      .page-header h1 { font-size: 1.5rem; }
+    }
+
+    /* Mobile phones */
+    @media (max-width: 600px) {
+      body { padding: 1rem; padding-left: max(1rem, env(safe-area-inset-left)); padding-right: max(1rem, env(safe-area-inset-right)); }
+      .page-header { flex-direction: column; align-items: stretch; gap: 0.75rem; margin-bottom: 1rem; }
+      .page-header h1 { font-size: 1.4rem; text-align: center; }
+      .header-actions {
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 0.5rem;
+      }
+      .header-actions button,
+      .header-actions .login-btn,
+      .header-actions .logout-btn,
+      .header-actions .admin-link,
+      .toggle-overview-btn,
+      .reset-btn {
+        min-height: 44px;
+        min-width: 44px;
+        padding: 0.6rem 1rem;
+      }
+      .user-logout-wrap { align-items: center; }
+      .form-row { grid-template-columns: 1fr; }
+      .stats-bar { grid-template-columns: repeat(2, 1fr); gap: 0.5rem; }
+      .stat-num { font-size: 1.2rem; }
+      .overview-sort-row { flex-wrap: wrap; }
+      .auth-box { min-width: 0; width: calc(100vw - 2rem); max-width: 320px; }
+      .admin-panel { padding: 1.25rem 1rem; }
+      input[type="text"],
+      input[type="date"],
+      input[type="email"],
+      input[type="password"],
+      select,
+      textarea { font-size: 16px; }
+      .ov-task-text { max-width: 140px; }
+      tbody td { padding: 0.65rem 0.5rem; }
+    }
+
+    /* Touch devices: larger tap targets */
+    @media (pointer: coarse) {
+      input[type="checkbox"] { width: 22px; height: 22px; min-width: 22px; min-height: 22px; }
+      button, .admin-link, .login-btn, .logout-btn { min-height: 44px; }
     }
 
     /* ── Cards ── */
@@ -981,7 +1030,7 @@
   <div id="poohOverlay">
     <div id="poohFloaties"></div>
     <div id="poohContainer">
-      <img id="poohGif" src="" alt="Pooh Bear dancing">
+      <img id="poohGif" src="" alt="Celebration">
       <div class="pooh-honey-bar"></div>
       <div class="pooh-text"  id="poohText">🍯 Task Complete! 🍯</div>
       <div class="pooh-sub"   id="poohSub">Oh bother… you did it! ✨</div>
@@ -997,6 +1046,9 @@
     const API_URL = 'https://todo-list-app-rrjb.onrender.com';
     const LOCAL_ORIGINS = ['http://localhost:3001', 'http://127.0.0.1:3001'];
     const API_BASE = (USE_API && window.location.origin !== API_URL && !LOCAL_ORIGINS.includes(window.location.origin)) ? API_URL : '';
+
+    // Celebration GIFs shown only for this user (set to your email, or null to disable)
+    const GIF_ENABLED_EMAIL = 'your@email.com';
 
     function getToken() { return localStorage.getItem('td_token'); }
     function setToken(t) { localStorage.setItem('td_token', t); }
@@ -1382,10 +1434,15 @@
     const poohFloaties  = document.getElementById('poohFloaties');
     let   poohTimer     = null;
 
-    // Pooh Bear with party hat — swap this URL if you have your own preferred GIF
-    const POOH_GIF     = 'https://i.giphy.com/9Y6n9TR7U07ew.gif';
-    const POOH_TEXT    = '🎉 Task Complete! 🎉';
-    const POOH_SUB     = 'Pooh Bear says great job! 🎂🍯';
+    // Celebration GIFs (Pooh Bear, Dog, Cards) — only shown for GIF_ENABLED_EMAIL
+    const POOH_GIF  = 'https://i.giphy.com/9Y6n9TR7U07ew.gif';
+    const DOG_GIF   = 'https://i.giphy.com/CvK4g9BNrzg2SPEAmt.gif';
+    const CARDS_GIF = 'https://i.giphy.com/DrjHNVzs5rWqXpInEe.gif';
+    const CELEBRATION_GIFS = [
+      { url: POOH_GIF,  text: '🎉 Task Complete! 🎉', sub: 'Pooh Bear says great job! 🎂🍯' },
+      { url: DOG_GIF,   text: '🎉 Task Complete! 🎉', sub: 'Good dog! You did it! 🐕✨' },
+      { url: CARDS_GIF, text: '🎉 Task Complete! 🎉', sub: 'Winning hand! 🃏🎊' }
+    ];
 
     const FLOATIE_ICONS = ['🎉','🎈','🎂','🍯','🎊','⭐','🎈','🎉','🎂','🎊'];
 
@@ -1406,11 +1463,16 @@
     }
 
     function launchFireworks() {
+      const canShow = USE_API && GIF_ENABLED_EMAIL && currentUser?.email &&
+        currentUser.email.toLowerCase() === GIF_ENABLED_EMAIL.toLowerCase();
+      if (!canShow) return;
+
       if (poohTimer) { clearTimeout(poohTimer); poohTimer = null; }
 
-      document.getElementById('poohGif').src             = POOH_GIF;
-      document.getElementById('poohText').textContent    = POOH_TEXT;
-      document.getElementById('poohSub').textContent     = POOH_SUB;
+      const pick = CELEBRATION_GIFS[Math.floor(Math.random() * CELEBRATION_GIFS.length)];
+      document.getElementById('poohGif').src             = pick.url;
+      document.getElementById('poohText').textContent    = pick.text;
+      document.getElementById('poohSub').textContent     = pick.sub;
 
       // Spawn floating icons
       spawnFloaties();
