@@ -108,6 +108,16 @@
       cursor: pointer;
     }
     .logout-btn:hover { background: #eee; }
+    .user-logout-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 0.25rem;
+    }
+    .user-email-display {
+      font-size: 0.75rem;
+      color: #666;
+    }
 
     /* ── Two-pane layout ── */
     .app-wrapper {
@@ -1347,7 +1357,10 @@
   <div class="page-header">
     <h1>📋 To-Do List</h1>
     <div class="header-actions">
-      <button class="logout-btn" id="logoutBtn" style="display:none">Log out</button>
+      <div class="user-logout-wrap" id="userLogoutWrap" style="display:none">
+        <span class="user-email-display" id="userEmailDisplay"></span>
+        <button class="logout-btn" id="logoutBtn">Log out</button>
+      </div>
       <button class="import-csv-btn" id="importCsvBtn">📥 Import CSV</button>
       <input type="file" id="csvFileInput" accept=".csv" style="display:none">
       <button class="toggle-overview-btn" id="toggleOverviewBtn">Hide Overview</button>
@@ -1799,11 +1812,14 @@
 
     function showAuthOverlay() {
       document.getElementById('authOverlay').classList.remove('hidden');
-      document.getElementById('logoutBtn').style.display = 'none';
+      document.getElementById('userLogoutWrap').style.display = 'none';
     }
     function hideAuthOverlay() {
       document.getElementById('authOverlay').classList.add('hidden');
-      if (USE_API) document.getElementById('logoutBtn').style.display = '';
+      if (USE_API) document.getElementById('userLogoutWrap').style.display = 'flex';
+    }
+    function setUserEmail(email) {
+      document.getElementById('userEmailDisplay').textContent = email || '';
     }
 
     /* ═══════════════════════════════════════════
@@ -3116,6 +3132,8 @@
       try {
         const r = await apiFetch('/api/me');
         if (!r.ok) throw new Error();
+        const me = await r.json();
+        setUserEmail(me.email);
         await loadDataFromApi();
         hideAuthOverlay();
         renderCourses();
@@ -3157,6 +3175,7 @@
           const data = await parseAuthResponse(r);
           if (!r.ok) throw new Error(data.error || 'Login failed');
           setToken(data.token);
+          setUserEmail(data.user?.email || email);
           await loadDataFromApi();
           onAuthSuccess();
         } catch (e) {
@@ -3173,6 +3192,7 @@
           const data = await parseAuthResponse(r);
           if (!r.ok) throw new Error(data.error || 'Registration failed');
           setToken(data.token);
+          setUserEmail(data.user?.email || email);
           await loadDataFromApi();
           onAuthSuccess();
         } catch (e) {
@@ -3181,6 +3201,7 @@
       });
       document.getElementById('logoutBtn').addEventListener('click', () => {
         clearToken();
+        setUserEmail('');
         courses = [];
         tasks = [];
         tags = [];
