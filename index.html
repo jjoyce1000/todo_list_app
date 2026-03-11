@@ -24,11 +24,38 @@
     .page-header {
       display: flex;
       align-items: center;
-      justify-content: center;
+      justify-content: space-between;
       gap: 1rem;
       margin-bottom: 1.5rem;
-      position: relative;
+      flex-wrap: wrap;
     }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-shrink: 0;
+    }
+
+    .auth-inline {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+    .auth-inline input {
+      padding: 0.4rem 0.6rem;
+      font-size: 0.85rem;
+      border: 1.5px solid #ccc;
+      border-radius: 7px;
+      min-width: 140px;
+    }
+    .auth-inline input[type="email"] { min-width: 160px; }
+    .auth-inline input[type="password"] { min-width: 120px; }
+    .auth-error-inline { color: #e74c3c; font-size: 0.8rem; margin-left: 0.25rem; }
+
+    .header-center { flex: 1; min-width: 0; text-align: center; }
+    .header-right { display: flex; gap: 0.5rem; flex-shrink: 0; }
 
     h1 {
       color: #1a1a2e;
@@ -36,12 +63,13 @@
       margin: 0;
     }
 
-    .header-actions {
-      position: absolute;
-      right: 0;
+    .user-logout-wrap {
       display: flex;
+      align-items: center;
       gap: 0.5rem;
+      flex-wrap: wrap;
     }
+    .user-email-display { font-size: 0.8rem; color: #444; }
 
     .toggle-overview-btn {
       padding: 0.45rem 0.9rem;
@@ -113,29 +141,6 @@
       color: white;
     }
 
-    .auth-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.5);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 9999;
-    }
-    .auth-overlay.hidden { display: none; }
-    .auth-box {
-      background: white;
-      padding: 1.5rem 2rem;
-      border-radius: 10px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.2);
-      min-width: 280px;
-    }
-    .auth-box h2 { margin: 0 0 1rem; font-size: 1.2rem; }
-    .auth-box .field { margin-bottom: 0.75rem; }
-    .auth-box .field label { display: block; font-size: 0.85rem; margin-bottom: 0.25rem; }
-    .auth-box .field input { width: 100%; padding: 0.5rem; }
-    .auth-box .auth-actions { display: flex; gap: 0.5rem; margin-top: 1rem; }
-    .auth-box .auth-error { color: #e74c3c; font-size: 0.85rem; margin-top: 0.5rem; }
     .login-btn, .logout-btn {
       padding: 0.45rem 0.9rem;
       border: 1.5px solid #666;
@@ -146,8 +151,6 @@
       cursor: pointer;
     }
     .login-btn:hover, .logout-btn:hover { background: #eee; }
-    .user-logout-wrap { display: flex; flex-direction: column; align-items: flex-end; gap: 0.2rem; }
-    .user-email-display { font-size: 0.8rem; color: #444; }
     .admin-panel-overlay {
       position: fixed;
       inset: 0;
@@ -257,7 +260,6 @@
         grid-template-columns: 1fr;
       }
       .right-pane { position: static; }
-      .header-actions { position: static; }
       .page-header { flex-wrap: wrap; justify-content: space-between; gap: 0.75rem; }
       .page-header h1 { font-size: 1.5rem; }
     }
@@ -266,16 +268,13 @@
     @media (max-width: 600px) {
       body { padding: 1rem; padding-left: max(1rem, env(safe-area-inset-left)); padding-right: max(1rem, env(safe-area-inset-right)); }
       .page-header { flex-direction: column; align-items: stretch; gap: 0.75rem; margin-bottom: 1rem; }
+      .header-left, .header-right { display: flex; flex-wrap: wrap; justify-content: center; }
       .page-header h1 { font-size: 1.4rem; text-align: center; }
-      .header-actions {
-        flex-wrap: wrap;
-        justify-content: center;
-        gap: 0.5rem;
-      }
-      .header-actions button,
-      .header-actions .login-btn,
-      .header-actions .logout-btn,
-      .header-actions .admin-link,
+      .header-left button,
+      .header-right button,
+      .header-left .login-btn,
+      .header-left .logout-btn,
+      .header-left .admin-link,
       .toggle-overview-btn,
       .import-csv-btn,
       .reset-btn {
@@ -283,12 +282,13 @@
         min-width: 44px;
         padding: 0.6rem 1rem;
       }
+      .auth-inline { flex-wrap: wrap; }
+      .auth-inline input { min-width: 120px; }
       .user-logout-wrap { align-items: center; }
       .form-row { grid-template-columns: 1fr; }
       .stats-bar { grid-template-columns: repeat(2, 1fr); gap: 0.5rem; }
       .stat-num { font-size: 1.2rem; }
       .overview-sort-row { flex-wrap: nowrap; overflow-x: auto; }
-      .auth-box { min-width: 0; width: calc(100vw - 2rem); max-width: 320px; }
       .admin-panel { padding: 1.25rem 1rem; }
       input[type="text"],
       input[type="date"],
@@ -1193,25 +1193,6 @@
 </head>
 <body>
 
-  <div class="auth-overlay hidden" id="authOverlay">
-    <div class="auth-box">
-      <h2>Sign in</h2>
-      <div class="field">
-        <label for="authEmail">Email</label>
-        <input type="email" id="authEmail" placeholder="you@example.com">
-      </div>
-      <div class="field">
-        <label for="authPassword">Password</label>
-        <input type="password" id="authPassword" placeholder="••••••••">
-      </div>
-      <div class="auth-error" id="authError"></div>
-      <div class="auth-actions">
-        <button class="btn-primary" id="authLoginBtn">Log in</button>
-        <button class="toggle-overview-btn" id="authRegisterBtn">Register</button>
-      </div>
-    </div>
-  </div>
-
   <div class="admin-panel-overlay hidden" id="adminPanelOverlay">
     <div class="admin-panel">
       <h3>Admin – Usage Stats</h3>
@@ -1222,14 +1203,22 @@
   </div>
 
   <div class="page-header">
-    <h1>📋 To-Do List</h1>
-    <div class="header-actions">
+    <div class="header-left">
+      <div class="auth-inline" id="authInlineForm" style="display:none">
+        <input type="email" id="authEmail" placeholder="Email">
+        <input type="password" id="authPassword" placeholder="Password">
+        <button class="btn-primary" id="authLoginBtn">Log in</button>
+        <button class="toggle-overview-btn" id="authRegisterBtn">Register</button>
+      </div>
+      <span class="auth-error-inline" id="authError"></span>
       <div class="user-logout-wrap" id="userLogoutWrap" style="display:none">
         <span class="user-email-display" id="userEmailDisplay"></span>
+        <button class="admin-link" id="adminBtn" style="display:none" title="Admin – usage stats">Admin</button>
         <button class="logout-btn" id="logoutBtn">Log out</button>
       </div>
-      <button class="login-btn" id="loginBtn" style="display:none">Log in</button>
-      <button class="admin-link" id="adminBtn" style="display:none" title="Admin – usage stats">Admin</button>
+    </div>
+    <div class="header-center"><h1>📋 To-Do List</h1></div>
+    <div class="header-right">
       <button class="toggle-overview-btn" id="toggleOverviewBtn">Hide Overview</button>
       <button class="import-csv-btn" id="csvImportBtn" title="Import tasks from CSV. Columns: Category, Tag, Task, Due Date, Status (or use header row). Missing columns = empty.">📥 Import CSV</button>
       <button class="reset-btn" id="resetBtn">🗑 Reset All Tasks</button>
@@ -1479,20 +1468,16 @@
       return res;
     }
 
-    function showAuthOverlay() {
-      document.getElementById('authOverlay').classList.remove('hidden');
+    function showAuthForm() {
+      document.getElementById('authInlineForm').style.display = 'flex';
       document.getElementById('userLogoutWrap').style.display = 'none';
-      document.getElementById('adminBtn').style.display = 'none';
-      document.getElementById('loginBtn').style.display = 'none';
+      document.getElementById('authError').textContent = '';
     }
-    function hideAuthOverlay() {
-      document.getElementById('authOverlay').classList.add('hidden');
-      if (USE_API) {
-        document.getElementById('loginBtn').style.display = 'none';
-        document.getElementById('userLogoutWrap').style.display = 'flex';
-        document.getElementById('userEmailDisplay').textContent = currentUser?.email || '';
-        document.getElementById('adminBtn').style.display = (currentUser?.role === 'admin') ? '' : 'none';
-      }
+    function hideAuthForm() {
+      document.getElementById('authInlineForm').style.display = 'none';
+      document.getElementById('userLogoutWrap').style.display = 'flex';
+      document.getElementById('userEmailDisplay').textContent = currentUser?.email || '';
+      document.getElementById('adminBtn').style.display = (currentUser?.role === 'admin') ? '' : 'none';
     }
 
     let userPreferences = {};
@@ -2968,7 +2953,6 @@
        Auth & Admin (API mode)
     ═══════════════════════════════════════════ */
     if (USE_API) {
-      document.getElementById('loginBtn').addEventListener('click', () => showAuthOverlay());
       document.getElementById('authLoginBtn').addEventListener('click', async () => {
         const email = document.getElementById('authEmail').value.trim();
         const password = document.getElementById('authPassword').value;
@@ -2985,7 +2969,7 @@
           renderTags();
           applyPreferences(getStoredPreferences());
           renderTasks();
-          hideAuthOverlay();
+          hideAuthForm();
           document.getElementById('authEmail').value = '';
           document.getElementById('authPassword').value = '';
         } catch (e) {
@@ -3008,7 +2992,7 @@
           renderTags();
           applyPreferences(getStoredPreferences());
           renderTasks();
-          hideAuthOverlay();
+          hideAuthForm();
           document.getElementById('authEmail').value = '';
           document.getElementById('authPassword').value = '';
         } catch (e) {
@@ -3024,7 +3008,7 @@
         document.getElementById('authEmail').value = '';
         document.getElementById('authPassword').value = '';
         document.getElementById('authError').textContent = '';
-        showAuthOverlay();
+        showAuthForm();
         renderCategories();
         renderTags();
         renderTasks();
@@ -3074,10 +3058,7 @@
     async function doAuthInit() {
       const token = getToken();
       if (!token) {
-        document.getElementById('authOverlay').classList.add('hidden');
-        document.getElementById('userLogoutWrap').style.display = 'none';
-        document.getElementById('adminBtn').style.display = 'none';
-        document.getElementById('loginBtn').style.display = '';
+        showAuthForm();
         renderCategories();
         renderTags();
         renderTasks();
@@ -3092,9 +3073,9 @@
         renderTags();
         applyPreferences(getStoredPreferences());
         renderTasks();
-        hideAuthOverlay();
+        hideAuthForm();
       } catch {
-        showAuthOverlay();
+        showAuthForm();
         renderCategories();
         renderTags();
         renderTasks();
@@ -3104,7 +3085,7 @@
     if (USE_API) {
       doAuthInit();
     } else {
-      document.getElementById('loginBtn').style.display = 'none';
+      document.getElementById('authInlineForm').style.display = 'none';
       document.getElementById('userLogoutWrap').style.display = 'none';
       document.getElementById('adminBtn').style.display = 'none';
       renderCategories();
