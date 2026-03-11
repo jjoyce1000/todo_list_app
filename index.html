@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>To-Do List</title>
+  <title>TaskTastic</title>
   <style>
     * { box-sizing: border-box; }
     html { -webkit-text-size-adjust: 100%; }
@@ -26,8 +26,15 @@
       align-items: center;
       justify-content: space-between;
       gap: 1rem;
-      margin-bottom: 1.5rem;
+      margin: -1.5rem -1.25rem 1.5rem -1.25rem;
+      margin-left: max(-1.25rem, calc(-1 * env(safe-area-inset-left)));
+      margin-right: max(-1.25rem, calc(-1 * env(safe-area-inset-right)));
+      padding: 1rem 1.25rem;
+      padding-left: max(1.25rem, env(safe-area-inset-left));
+      padding-right: max(1.25rem, env(safe-area-inset-right));
       flex-wrap: wrap;
+      background: linear-gradient(135deg, #4a90d9 0%, #5b9bd5 25%, #7eb8e8 50%, #a8d4f0 100%);
+      box-shadow: 0 2px 8px rgba(74, 144, 217, 0.25);
     }
 
     .header-left {
@@ -35,6 +42,12 @@
       align-items: center;
       gap: 0.5rem;
       flex-shrink: 0;
+    }
+
+    .header-title-wrap {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
     }
 
     .auth-inline {
@@ -46,21 +59,37 @@
     .auth-inline input {
       padding: 0.4rem 0.6rem;
       font-size: 0.85rem;
-      border: 1.5px solid #ccc;
+      border: 1.5px solid rgba(255,255,255,0.6);
       border-radius: 7px;
       min-width: 140px;
+      background: rgba(255,255,255,0.95);
+    }
+    .page-header .auth-inline input {
+      border-color: rgba(255,255,255,0.8);
     }
     .auth-inline input[type="email"] { min-width: 160px; }
     .auth-inline input[type="password"] { min-width: 120px; }
     .auth-error-inline { color: #e74c3c; font-size: 0.8rem; margin-left: 0.25rem; }
 
-    .header-center { flex: 1; min-width: 0; text-align: center; }
+    .header-center { flex: 1; min-width: 0; }
     .header-right { display: flex; gap: 0.5rem; flex-shrink: 0; }
 
-    h1 {
-      color: #1a1a2e;
+    .page-header h1 {
+      color: white;
       font-size: 1.9rem;
       margin: 0;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .tasktastic-logo {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .tasktastic-logo svg {
+      filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
     }
 
     .user-logout-wrap {
@@ -69,7 +98,25 @@
       gap: 0.5rem;
       flex-wrap: wrap;
     }
-    .user-email-display { font-size: 0.8rem; color: #444; }
+    .user-email-display { font-size: 0.8rem; color: rgba(255,255,255,0.95); }
+    .page-header .import-csv-btn,
+    .page-header .import-pdf-btn,
+    .page-header .reset-btn,
+    .page-header .settings-gear-btn,
+    .page-header .login-btn,
+    .page-header .logout-btn,
+    .page-header .admin-link {
+      background: rgba(255,255,255,0.95);
+      border-color: rgba(255,255,255,0.9);
+    }
+    .page-header .import-csv-btn { color: #27ae60; }
+    .page-header .import-csv-btn:hover { background: #27ae60; color: white; }
+    .page-header .import-pdf-btn { color: #8e44ad; }
+    .page-header .import-pdf-btn:hover { background: #8e44ad; color: white; }
+    .page-header .reset-btn { color: #e74c3c; }
+    .page-header .reset-btn:hover { background: #e74c3c; color: white; }
+    .page-header .settings-gear-btn { color: #4a90d9; }
+    .page-header .settings-gear-btn:hover { background: rgba(255,255,255,0.95); color: #4a90d9; border-color: white; }
 
     .toggle-overview-btn {
       padding: 0.45rem 0.9rem;
@@ -121,6 +168,23 @@
     }
     .import-csv-btn:hover {
       background: #27ae60;
+      color: white;
+    }
+
+    .import-pdf-btn {
+      padding: 0.45rem 0.9rem;
+      border: 1.5px solid #8e44ad;
+      border-radius: 7px;
+      background: white;
+      color: #8e44ad;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.15s, color 0.15s;
+    }
+    .import-pdf-btn:hover {
+      background: #8e44ad;
       color: white;
     }
 
@@ -176,37 +240,68 @@
     .admin-panel .stats-result .error { color: #e74c3c; font-size: 0.9rem; }
     .admin-panel .close-btn { margin-top: 1rem; }
 
-    /* ── Two-pane layout ── */
+    .config-panel-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9997;
+    }
+    .config-panel-overlay.hidden { display: none; }
+    .config-panel {
+      background: white;
+      padding: 1.25rem 1.5rem;
+      border-radius: 10px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+      max-width: min(420px, calc(100vw - 2rem));
+      max-height: calc(100vh - 2rem);
+      display: flex;
+      flex-direction: column;
+    }
+    .config-panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+      flex-shrink: 0;
+    }
+    .config-panel-header h3 { margin: 0; font-size: 1.2rem; }
+    .config-panel-body {
+      overflow-y: auto;
+      flex: 1;
+      min-height: 0;
+    }
+    .config-panel .card { margin-bottom: 1rem; }
+    .config-panel .card:last-child { margin-bottom: 0; }
+    .settings-gear-btn {
+      width: 40px;
+      height: 40px;
+      padding: 0;
+      border: 1.5px solid #6c5ce7;
+      border-radius: 50%;
+      background: white;
+      color: #6c5ce7;
+      font-size: 1.25rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s, color 0.15s;
+    }
+    .settings-gear-btn:hover {
+      background: #6c5ce7;
+      color: white;
+    }
+
+    /* ── Layout ── */
     .app-wrapper {
       display: grid;
-      grid-template-columns: 380px 1fr;
-      gap: 1.25rem;
-      max-width: 1180px;
-      margin: 0 auto;
+      grid-template-columns: 1fr;
+      width: 100%;
       align-items: start;
       position: relative;
-    }
-
-    .app-wrapper.overview-hidden {
-      grid-template-columns: 520px;
-      justify-content: center;
-    }
-
-    .app-wrapper.left-collapsed {
-      grid-template-columns: 0 1fr;
-    }
-    .app-wrapper.left-collapsed .left-column {
-      min-width: 0;
-    }
-    .app-wrapper.left-collapsed .left-pane {
-      overflow: hidden;
-      min-width: 0;
-      padding: 0;
-      margin: 0;
-    }
-    .app-wrapper.left-collapsed.overview-hidden {
-      grid-template-columns: 1fr;
-      justify-content: center;
     }
 
     .right-pane {
@@ -216,49 +311,9 @@
 
     .right-pane.hidden { display: none; }
 
-    .left-pane-toggle-row {
-      margin-bottom: 0.5rem;
-    }
-    .left-pane-toggle {
-      width: 100%;
-      height: 32px;
-      border: 1px solid #d0d4dc;
-      border-radius: 8px;
-      background: white;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.1rem;
-      font-weight: 600;
-      color: #555;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-    }
-    .left-pane-toggle:hover { background: #f7f8fa; color: #333; }
-    .app-wrapper.left-collapsed .left-pane-toggle-row {
-      position: fixed;
-      left: max(0, env(safe-area-inset-left));
-      top: 50%;
-      transform: translateY(-50%);
-      margin: 0;
-      z-index: 100;
-    }
-    .app-wrapper.left-collapsed .left-pane-toggle {
-      width: 28px;
-      min-width: 28px;
-      height: 48px;
-      margin: 0;
-      border-radius: 0 8px 8px 0;
-      border-left: none;
-      box-shadow: 2px 0 6px rgba(0,0,0,0.12);
-    }
-
     /* Tablet and below */
     @media (max-width: 820px) {
-      .app-wrapper,
-      .app-wrapper.overview-hidden {
-        grid-template-columns: 1fr;
-      }
+      .app-wrapper { grid-template-columns: 1fr; }
       .right-pane { position: static; }
       .page-header { flex-wrap: wrap; justify-content: space-between; gap: 0.75rem; }
       .page-header h1 { font-size: 1.5rem; }
@@ -267,16 +322,28 @@
     /* Mobile phones */
     @media (max-width: 600px) {
       body { padding: 1rem; padding-left: max(1rem, env(safe-area-inset-left)); padding-right: max(1rem, env(safe-area-inset-right)); }
-      .page-header { flex-direction: column; align-items: stretch; gap: 0.75rem; margin-bottom: 1rem; }
+      .page-header {
+        margin: -1rem -1rem 1rem -1rem;
+        margin-left: max(-1rem, calc(-1 * env(safe-area-inset-left)));
+        margin-right: max(-1rem, calc(-1 * env(safe-area-inset-right)));
+        padding: 1rem;
+        padding-left: max(1rem, env(safe-area-inset-left));
+        padding-right: max(1rem, env(safe-area-inset-right));
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.75rem;
+      }
       .header-left, .header-right { display: flex; flex-wrap: wrap; justify-content: center; }
-      .page-header h1 { font-size: 1.4rem; text-align: center; }
+      .page-header h1 { font-size: 1.4rem; text-align: left; }
       .header-left button,
       .header-right button,
+      .settings-gear-btn,
       .header-left .login-btn,
       .header-left .logout-btn,
       .header-left .admin-link,
       .toggle-overview-btn,
       .import-csv-btn,
+      .import-pdf-btn,
       .reset-btn {
         min-height: 44px;
         min-width: 44px;
@@ -631,7 +698,7 @@
       align-items: center;
     }
 
-    .ov-edit-category, .ov-edit-tag { cursor: pointer; }
+    .ov-edit-category, .ov-edit-tag, .ov-edit-task-text { cursor: pointer; }
     .ov-inline-select {
       padding: 0.2rem 0.4rem;
       font-size: 0.8rem;
@@ -639,6 +706,20 @@
       border: 1px solid #4a90d9;
       min-width: 100px;
       background: #fff;
+    }
+    .ov-inline-text-input {
+      flex: 1;
+      min-width: 0;
+      padding: 0.2rem 0.4rem;
+      font-size: inherit;
+      border-radius: 6px;
+      border: 1px solid #4a90d9;
+      background: #fff;
+    }
+    .ov-inline-text-input:focus {
+      outline: none;
+      border-color: #4a90d9;
+      box-shadow: 0 0 0 2px rgba(74,144,217,0.25);
     }
 
     /* ── Badges & chips ── */
@@ -816,6 +897,45 @@
       margin: 0 0.25rem;
       flex-shrink: 0;
     }
+
+    .ov-add-task-wrap { margin-bottom: 1rem; }
+    .ov-add-task-toggle {
+      margin-bottom: 0;
+      cursor: pointer;
+      justify-content: flex-start;
+      gap: 0.5rem;
+    }
+    .ov-add-task-symbol {
+      display: inline-block;
+      min-width: 1.2em;
+      font-weight: 700;
+      font-size: 1.1em;
+    }
+    .ov-add-task-wrap .collapsible-body { margin-top: 0.5rem; }
+    .ov-add-task-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+    }
+    .ov-add-task-row input[type="text"] {
+      flex: 1;
+      min-width: 160px;
+      padding: 0.5rem 0.65rem;
+      font-size: 0.9rem;
+      border: 1.5px solid #d0d4dc;
+      border-radius: 8px;
+    }
+    .ov-add-task-row input[type="date"],
+    .ov-add-task-row select {
+      padding: 0.5rem 0.65rem;
+      font-size: 0.88rem;
+      border: 1.5px solid #d0d4dc;
+      border-radius: 8px;
+    }
+    .ov-add-task-row select { min-width: 100px; }
+    .ov-add-task-row .btn-primary { flex-shrink: 0; }
 
     /* Overview table */
     .ov-bulk-bar {
@@ -1202,8 +1322,77 @@
     </div>
   </div>
 
+  <div class="config-panel-overlay hidden" id="configPanelOverlay">
+    <div class="config-panel">
+      <div class="config-panel-header">
+        <h3>⚙️ Configuration</h3>
+        <button class="login-btn close-btn" id="configPanelCloseBtn">Close</button>
+      </div>
+      <div class="config-panel-body">
+        <!-- Categories Manager -->
+        <div class="card" id="categoriesCard">
+          <div class="card-title" id="categoriesToggle">
+            <span>📁 Categories</span>
+            <span class="toggle-icon">▼</span>
+          </div>
+          <div class="collapsible-body" id="categoriesBody">
+            <div id="categoriesList"></div>
+            <div class="section-label">Add a Category</div>
+            <div class="field">
+              <label for="categoryName">Category Name</label>
+              <input type="text" id="categoryName" placeholder="e.g. Personal, School, Exercise">
+            </div>
+            <div class="field">
+              <label for="categoryDesc">Description</label>
+              <textarea id="categoryDesc" placeholder="Optional description…"></textarea>
+            </div>
+            <button class="btn-primary btn-full" id="addCategoryBtn">Add Category</button>
+          </div>
+        </div>
+
+        <!-- Tags Manager -->
+        <div class="card" id="tagsCard">
+          <div class="card-title" id="tagsToggle">
+            <span>🏷️ Tags</span>
+            <span class="toggle-icon">▼</span>
+          </div>
+          <div class="collapsible-body" id="tagsBody">
+            <div id="tagsList"></div>
+            <div class="section-label">Add a Tag</div>
+            <div class="field">
+              <label for="tagName">Tag Name</label>
+              <input type="text" id="tagName" placeholder="e.g. Course, Activity">
+            </div>
+            <div class="field">
+              <label for="tagColor">Color</label>
+              <div class="color-picker-row">
+                <input type="color" id="tagColor" value="#4a90d9" title="Choose color">
+              </div>
+            </div>
+            <button class="btn-primary btn-full" id="addTagBtn">Add Tag</button>
+          </div>
+        </div>
+
+        <!-- Import -->
+        <div class="card" id="importAiCard">
+          <div class="card-title" id="importAiToggle">
+            <span>📥 Import</span>
+            <span class="toggle-icon">▼</span>
+          </div>
+          <div class="collapsible-body" id="importAiBody">
+            <p class="import-hint" style="margin:0;font-size:0.9rem">Use Import button for CSV, PDF, or TXT files. PDF (Electron): uses <code>pdf_to_csv.py</code>; set <code>OPENAI_API_KEY</code> for AI-powered parsing (GPT-4o).</p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
   <div class="page-header">
     <div class="header-left">
+      <div class="header-title-wrap">
+        <h1><span class="tasktastic-logo" aria-hidden="true"><svg viewBox="0 0 48 48" width="38" height="38" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="ttGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#fff"/><stop offset="100%" style="stop-color:#e8f4fc"/></linearGradient><linearGradient id="ttCheck" x1="0%" y1="100%" x2="100%" y2="0%"><stop offset="0%" style="stop-color:#27ae60"/><stop offset="100%" style="stop-color:#2ecc71"/></linearGradient></defs><circle cx="24" cy="24" r="22" fill="url(#ttGrad)" stroke="white" stroke-width="2" opacity="0.95"/><path d="M12 22l5 5 9-9" stroke="url(#ttCheck)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/><text x="30" y="26" text-anchor="middle" font-family="system-ui,-apple-system,sans-serif" font-weight="900" font-size="15" fill="#4a90d9" letter-spacing="-0.5">TT</text></svg></span> TaskTastic</h1>
+      </div>
       <div class="auth-inline" id="authInlineForm" style="display:none">
         <input type="email" id="authEmail" placeholder="Email">
         <input type="password" id="authPassword" placeholder="Password">
@@ -1217,108 +1406,42 @@
         <button class="logout-btn" id="logoutBtn">Log out</button>
       </div>
     </div>
-    <div class="header-center"><h1>📋 To-Do List</h1></div>
     <div class="header-right">
-      <button class="toggle-overview-btn" id="toggleOverviewBtn">Hide Overview</button>
-      <button class="import-csv-btn" id="csvImportBtn" title="Import tasks from CSV. Columns: Category, Tag, Task, Due Date, Status (or use header row). Missing columns = empty.">📥 Import CSV</button>
+      <button class="import-csv-btn" id="csvImportBtn" title="Import from CSV">📥 Import CSV</button>
+      <button class="import-pdf-btn" id="pdfImportBtn" title="Import from PDF (syllabus, schedule)">📄 Import PDF</button>
       <button class="reset-btn" id="resetBtn">🗑 Reset All Tasks</button>
+      <button class="settings-gear-btn" id="configBtn" title="Settings – Categories, Tags">⚙</button>
     </div>
   </div>
   <input type="file" id="csvImportInput" accept=".csv" style="display:none">
 
   <div class="app-wrapper" id="appWrapper">
-    <div class="left-column">
-      <div class="left-pane-toggle-row" id="leftPaneToggleRow">
-        <button class="left-pane-toggle" id="leftPaneToggle" title="Collapse/expand left pane" aria-label="Toggle left pane">−</button>
-      </div>
-      <!-- ══════════════ LEFT PANE ══════════════ -->
-      <div class="left-pane" id="leftPane">
-      <div class="left-pane-content">
-      <!-- Categories Manager -->
-      <div class="card" id="categoriesCard">
-        <div class="card-title" id="categoriesToggle">
-          <span>📁 Categories</span>
-          <span class="toggle-icon">▼</span>
-        </div>
-        <div class="collapsible-body" id="categoriesBody">
-          <div id="categoriesList"></div>
-          <div class="section-label">Add a Category</div>
-          <div class="field">
-            <label for="categoryName">Category Name</label>
-            <input type="text" id="categoryName" placeholder="e.g. Personal, School, Exercise">
-          </div>
-          <div class="field">
-            <label for="categoryDesc">Description</label>
-            <textarea id="categoryDesc" placeholder="Optional description…"></textarea>
-          </div>
-          <button class="btn-primary btn-full" id="addCategoryBtn">Add Category</button>
-        </div>
-      </div>
-
-      <!-- Tags Manager -->
-      <div class="card" id="tagsCard">
-        <div class="card-title" id="tagsToggle">
-          <span>🏷️ Tags</span>
-          <span class="toggle-icon">▼</span>
-        </div>
-        <div class="collapsible-body" id="tagsBody">
-          <div id="tagsList"></div>
-          <div class="section-label">Add a Tag</div>
-          <div class="field">
-            <label for="tagName">Tag Name</label>
-            <input type="text" id="tagName" placeholder="e.g. Course, Activity">
-          </div>
-          <div class="field">
-            <label for="tagColor">Color</label>
-            <div class="color-picker-row">
-              <input type="color" id="tagColor" value="#4a90d9" title="Choose color">
-            </div>
-          </div>
-          <button class="btn-primary btn-full" id="addTagBtn">Add Tag</button>
-        </div>
-      </div>
-
-      <!-- Add Task -->
-      <div class="card" id="addTaskCard">
-        <div class="card-title" id="addTaskToggle">
-          <span>➕ Add Task</span>
-          <span class="toggle-icon">▼</span>
-        </div>
-        <div class="collapsible-body" id="addTaskBody">
-        <div class="field">
-          <label for="newTask">Task</label>
-          <input type="text" id="newTask" placeholder="What do you need to do?" enterkeyhint="done">
-        </div>
-        <div class="form-row">
-          <div class="field">
-            <label for="dueDate">Due Date</label>
-            <input type="date" id="dueDate">
-          </div>
-          <div class="field">
-            <label for="categorySelect">Category</label>
-            <select id="categorySelect">
-              <option value="">— No category —</option>
-            </select>
-          </div>
-        </div>
-        <div class="field">
-          <label for="tagSelect">Tag</label>
-          <select id="tagSelect">
-            <option value="">— No tag —</option>
-          </select>
-        </div>
-        <button class="btn-primary btn-full" id="addTaskBtn">Add Task</button>
-        </div>
-      </div>
-      </div><!-- /left-pane-content -->
-    </div><!-- /left-pane -->
-    </div><!-- /left-column -->
-
-    <!-- ══════════════ RIGHT PANE ══════════════ -->
+    <!-- ══════════════ TASK OVERVIEW PANE ══════════════ -->
     <div class="right-pane" id="rightPane">
       <div class="card overview-card">
         <div class="card-title" style="cursor:default;">
           <span>📊 Task Overview</span>
+        </div>
+
+        <!-- Add Task (collapsible) -->
+        <div class="ov-add-task-wrap">
+          <div class="card-title ov-add-task-toggle" id="ovAddTaskToggle">
+            <span class="ov-add-task-symbol" id="ovAddTaskSymbol" title="Click to expand">+</span>
+            <span> Add Task</span>
+          </div>
+          <div class="collapsible-body" id="ovAddTaskBody">
+            <div class="ov-add-task-row">
+              <input type="text" id="newTask" placeholder="What do you need to do?" enterkeyhint="done">
+              <input type="date" id="dueDate" title="Due date">
+              <select id="categorySelect" title="Category">
+                <option value="">— Category —</option>
+              </select>
+              <select id="tagSelect" title="Tag">
+                <option value="">— Tag —</option>
+              </select>
+              <button class="btn-primary" id="addTaskBtn">Add Task</button>
+            </div>
+          </div>
         </div>
 
         <!-- Stats -->
@@ -1448,7 +1571,12 @@
     const USE_API = (window.location.protocol === 'http:' || window.location.protocol === 'https:');
     const API_URL = 'https://todo-list-app-rrjb.onrender.com';
     const LOCAL_ORIGINS = ['http://localhost:3001', 'http://127.0.0.1:3001'];
-    const API_BASE = (USE_API && window.location.origin !== API_URL && !LOCAL_ORIGINS.includes(window.location.origin)) ? API_URL : '';
+    const API_BASE = (() => {
+      if (!USE_API) return '';
+      if (LOCAL_ORIGINS.includes(window.location.origin)) return '';
+      if (/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(window.location.origin)) return 'http://localhost:3001';
+      return API_URL;
+    })();
 
     // Celebration GIFs shown only for this user (set to your email, or null to disable)
     const GIF_ENABLED_EMAIL = 'ccj2006@outlook.com';
@@ -1517,8 +1645,6 @@
         filterDateSpecific: document.getElementById('ovFilterDateSpecific')?.value || '',
         filterStatus: document.getElementById('ovFilterStatus')?.value || '',
         filterSubtasks: document.getElementById('ovFilterSubtasks')?.value || '',
-        overviewVisible: typeof overviewVisible !== 'undefined' ? overviewVisible : true,
-        leftPaneCollapsed: typeof leftPaneCollapsed !== 'undefined' ? leftPaneCollapsed : false,
         collapsedSubtasks: Array.from(collapsedSubtasks || []),
         addTaskCategory: document.getElementById('categorySelect')?.value || '',
         addTaskTag: document.getElementById('tagSelect')?.value || ''
@@ -1563,22 +1689,11 @@
       if (fstatus && prefs.filterStatus !== undefined) fstatus.value = prefs.filterStatus;
       const fsub = document.getElementById('ovFilterSubtasks');
       if (fsub && prefs.filterSubtasks !== undefined) fsub.value = prefs.filterSubtasks;
-      if (typeof prefs.overviewVisible === 'boolean') overviewVisible = prefs.overviewVisible;
-      if (typeof prefs.leftPaneCollapsed === 'boolean') leftPaneCollapsed = prefs.leftPaneCollapsed;
       if (Array.isArray(prefs.collapsedSubtasks)) collapsedSubtasks = new Set(prefs.collapsedSubtasks);
       const catSel = document.getElementById('categorySelect');
       const tagSel = document.getElementById('tagSelect');
       if (catSel && prefs.addTaskCategory !== undefined) catSel.value = prefs.addTaskCategory;
       if (tagSel && prefs.addTaskTag !== undefined) tagSel.value = prefs.addTaskTag;
-      const pane = document.getElementById('rightPane');
-      const wrapper = document.getElementById('appWrapper');
-      const toggleBtn = document.getElementById('toggleOverviewBtn');
-      if (pane) pane.classList.toggle('hidden', !overviewVisible);
-      if (wrapper) wrapper.classList.toggle('overview-hidden', !overviewVisible);
-      if (toggleBtn) toggleBtn.textContent = overviewVisible ? 'Hide Overview' : 'Show Overview';
-      const leftBtn = document.getElementById('leftPaneToggle');
-      if (wrapper) wrapper.classList.toggle('left-collapsed', leftPaneCollapsed);
-      if (leftBtn) { leftBtn.textContent = leftPaneCollapsed ? '+' : '−'; leftBtn.title = leftPaneCollapsed ? 'Expand left pane' : 'Collapse left pane'; }
     }
 
     function savePreferencesToStorage() {
@@ -1884,9 +1999,6 @@
     let selectedTaskIds = new Set();
     let bulkUndoSnapshot = null;
     let pendingEditTaskId = null;
-    let overviewVisible = true;
-    let leftPaneCollapsed = false;
-
     /* ═══════════════════════════════════════════
        Overview pane (right pane)
     ═══════════════════════════════════════════ */
@@ -2044,7 +2156,7 @@
         const arrowHtml = hasSubtasks ? `<span class="ov-subtask-toggle" title="${isExpanded ? 'Collapse subtasks' : 'Expand subtasks'}">${isExpanded ? '▼' : '▶'}</span>` : '';
         const addBtnHtml = !isSubtask ? '<button class="ov-add-subtask-btn" title="Add subtask">+</button>' : '';
         const notepadHtml = hasSubtasks ? '<span class="ov-subtask-indicator" title="Has subtasks">📝</span>' : '';
-        const taskCellHtml = `<div class="ov-task-cell">${arrowHtml}${addBtnHtml}${notepadHtml}<div class="ov-task-text" title="${escHtml(task.text)}">${escHtml(task.text)}</div></div>`;
+        const taskCellHtml = `<div class="ov-task-cell">${arrowHtml}${addBtnHtml}${notepadHtml}<div class="ov-edit-task-text ov-task-text" title="Click to edit">${escHtml(task.text)}</div></div>`;
         const actionsHtml = '<button class="ov-edit-btn" title="Edit task">✎</button><button class="ov-remove-btn" title="Remove task">✕</button>';
 
         const cellMap = {
@@ -2138,6 +2250,33 @@
             sel.addEventListener('blur', () => setTimeout(commit, 0));
             wrap.replaceWith(sel);
             sel.focus();
+          });
+        }
+
+        const textCell = tr.querySelector('td[data-col="text"]');
+        const taskTextEl = textCell?.querySelector('.ov-edit-task-text');
+        if (taskTextEl) {
+          taskTextEl.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const wrap = textCell.querySelector('.ov-edit-task-text');
+            if (!wrap || textCell.querySelector('.ov-inline-text-input')) return;
+            const inp = document.createElement('input');
+            inp.type = 'text';
+            inp.className = 'ov-inline-text-input ov-task-text';
+            inp.value = task.text || '';
+            const commit = () => {
+              const val = (inp.value || '').trim();
+              if (val) task.text = val;
+              save();
+              renderTasks();
+            };
+            inp.addEventListener('keydown', (ev) => {
+              if (ev.key === 'Enter') { ev.preventDefault(); commit(); }
+              if (ev.key === 'Escape') { ev.preventDefault(); renderTasks(); }
+            });
+            inp.addEventListener('blur', () => setTimeout(commit, 0));
+            wrap.replaceWith(inp);
+            inp.focus();
           });
         }
 
@@ -2414,35 +2553,12 @@
     }
 
     /* ═══════════════════════════════════════════
-       Toggle overview pane
-    ═══════════════════════════════════════════ */
-    function toggleOverview() {
-      overviewVisible = !overviewVisible;
-      const pane   = document.getElementById('rightPane');
-      const wrapper = document.getElementById('appWrapper');
-      const btn    = document.getElementById('toggleOverviewBtn');
-      pane.classList.toggle('hidden', !overviewVisible);
-      wrapper.classList.toggle('overview-hidden', !overviewVisible);
-      btn.textContent = overviewVisible ? 'Hide Overview' : 'Show Overview';
-      savePreferencesToStorage();
-    }
-
-    function toggleLeftPane() {
-      leftPaneCollapsed = !leftPaneCollapsed;
-      const wrapper = document.getElementById('appWrapper');
-      const btn    = document.getElementById('leftPaneToggle');
-      wrapper.classList.toggle('left-collapsed', leftPaneCollapsed);
-      btn.textContent = leftPaneCollapsed ? '+' : '−';
-      btn.title = leftPaneCollapsed ? 'Expand left pane' : 'Collapse left pane';
-      savePreferencesToStorage();
-    }
-
-    /* ═══════════════════════════════════════════
        Collapsible panels
     ═══════════════════════════════════════════ */
     let categoriesOpen = true;
     let tagsOpen = true;
-    let addTaskOpen = true;
+    let importAiOpen = false;
+    let ovAddTaskOpen = true;
 
     function toggleCategories() {
       categoriesOpen = !categoriesOpen;
@@ -2476,20 +2592,39 @@
       toggle.classList.toggle('collapsed', !tagsOpen);
     }
 
-    function toggleAddTask() {
-      addTaskOpen = !addTaskOpen;
-      const body   = document.getElementById('addTaskBody');
-      const toggle = document.getElementById('addTaskToggle');
-      if (addTaskOpen) {
+    function toggleImportAi() {
+      importAiOpen = !importAiOpen;
+      const body   = document.getElementById('importAiBody');
+      const toggle = document.getElementById('importAiToggle');
+      if (importAiOpen) {
         body.style.maxHeight = body.scrollHeight + 'px';
         body.addEventListener('transitionend', () => {
-          if (addTaskOpen) body.style.maxHeight = 'none';
+          if (importAiOpen) body.style.maxHeight = 'none';
         }, { once: true });
       } else {
         body.style.maxHeight = body.scrollHeight + 'px';
         requestAnimationFrame(() => { body.style.maxHeight = '0'; });
       }
-      toggle.classList.toggle('collapsed', !addTaskOpen);
+      toggle.classList.toggle('collapsed', !importAiOpen);
+    }
+
+    function toggleOvAddTask() {
+      ovAddTaskOpen = !ovAddTaskOpen;
+      const body   = document.getElementById('ovAddTaskBody');
+      const symbol = document.getElementById('ovAddTaskSymbol');
+      if (ovAddTaskOpen) {
+        body.style.maxHeight = body.scrollHeight + 'px';
+        body.addEventListener('transitionend', () => {
+          if (ovAddTaskOpen) body.style.maxHeight = 'none';
+        }, { once: true });
+        symbol.textContent = '−';
+        symbol.title = 'Click to collapse';
+      } else {
+        body.style.maxHeight = body.scrollHeight + 'px';
+        requestAnimationFrame(() => { body.style.maxHeight = '0'; });
+        symbol.textContent = '+';
+        symbol.title = 'Click to expand';
+      }
     }
 
     /* ═══════════════════════════════════════════
@@ -2680,11 +2815,10 @@
     document.getElementById('newTask').addEventListener('keydown', e => { if (e.key === 'Enter') addTask(); });
 
 
-    document.getElementById('leftPaneToggle').addEventListener('click', toggleLeftPane);
     document.getElementById('categoriesToggle').addEventListener('click', toggleCategories);
     document.getElementById('tagsToggle').addEventListener('click', toggleTags);
-    document.getElementById('addTaskToggle').addEventListener('click', toggleAddTask);
-    document.getElementById('toggleOverviewBtn').addEventListener('click', toggleOverview);
+    document.getElementById('importAiToggle').addEventListener('click', toggleImportAi);
+    document.getElementById('ovAddTaskToggle').addEventListener('click', toggleOvAddTask);
 
     document.getElementById('resetBtn').addEventListener('click', () => {
       if (!confirm('Are you sure? This will clear all tasks and cannot be undone.')) return;
@@ -2693,113 +2827,153 @@
       renderTasks();
     });
 
-    document.getElementById('csvImportBtn').addEventListener('click', () => document.getElementById('csvImportInput').click());
+    document.getElementById('configBtn').addEventListener('click', () => {
+      document.getElementById('configPanelOverlay').classList.remove('hidden');
+    });
+    document.getElementById('configPanelCloseBtn').addEventListener('click', () => {
+      document.getElementById('configPanelOverlay').classList.add('hidden');
+    });
+    document.getElementById('configPanelOverlay').addEventListener('click', (e) => {
+      if (e.target.id === 'configPanelOverlay') document.getElementById('configPanelOverlay').classList.add('hidden');
+    });
+
+    document.getElementById('csvImportBtn').addEventListener('click', async () => {
+      if (typeof window.electronAPI !== 'undefined' && window.electronAPI.showImportDialog) {
+        const chosen = await window.electronAPI.showImportDialog();
+        if (!chosen) return;
+        handleImport(chosen.ext, chosen.path, chosen.name);
+      } else {
+        document.getElementById('csvImportInput').click();
+      }
+    });
+
+    document.getElementById('pdfImportBtn').addEventListener('click', async () => {
+      if (typeof window.electronAPI === 'undefined' || !window.electronAPI.showImportPdfDialog || !window.electronAPI.runPdfToCsv) {
+        alert('PDF import is available in the desktop app. Run: npm start');
+        return;
+      }
+      const pdfPath = await window.electronAPI.showImportPdfDialog();
+      if (!pdfPath) return;
+      try {
+        const csvText = await window.electronAPI.runPdfToCsv(pdfPath);
+        const importedTasks = await parseImportSource('csv', { text: () => Promise.resolve(csvText) }, 'imported.csv');
+        await applyImportedTasks(importedTasks);
+        alert(`Imported ${importedTasks.length} task(s) from PDF.`);
+      } catch (err) {
+        alert('PDF import failed: ' + (err.message || 'Unknown error'));
+      }
+    });
+
     document.getElementById('csvImportInput').addEventListener('change', async (e) => {
       const file = e.target.files?.[0];
       e.target.value = '';
       if (!file) return;
+      const ext = (file.name.split('.').pop() || '').toLowerCase();
+      handleImport(ext, file, file.name);
+    });
+
+    async function handleImport(ext, fileOrPath, fileName) {
       try {
-        const text = await file.text();
-        const lines = text.split(/\r?\n/).filter(l => l.trim());
-        const courseMap = {};
-        const importedTasks = [];
-        const COL_KEYS = ['category', 'tag', 'task', 'duedate', 'status'];
-        const norm = s => (s || '').toLowerCase().replace(/[\s_-]/g, '');
-        let colMap = [0, 1, 2, 3, 4];
-        if (lines.length > 0) {
-          const firstRow = parseCSVLine(lines[0]);
-          const firstNorm = firstRow.map(c => norm(c));
-          const matches = COL_KEYS.filter(k => firstNorm.some(c => c === k || c.includes(k) || k.includes(c)));
-          const isHeader = matches.length >= 2;
-          if (isHeader) {
-            colMap = COL_KEYS.map(k => {
-              const idx = firstNorm.findIndex(c => c.includes(k) || k.includes(c));
-              return idx >= 0 ? idx : -1;
-            });
-            lines.shift();
-          }
-        }
-        for (let i = 0; i < lines.length; i++) {
-          const row = parseCSVLine(lines[i]);
-          const getCol = idx => (idx >= 0 && idx < row.length ? row[idx] : '') || '';
-          const categoryName = getCol(colMap[0]);
-          const tagName = getCol(colMap[1]);
-          const taskText = getCol(colMap[2]);
-          const dueDate = getCol(colMap[3]);
-          const status = getCol(colMap[4]);
-          if (!(taskText || '').trim()) continue;
-          let courseId = '';
-          if (categoryName && categoryName.trim()) {
-            const cname = categoryName.trim();
-            const ckey = cname.toLowerCase();
-            if (!courseMap[ckey]) {
-              const existing = courses.find(c => c.name.toLowerCase() === ckey);
-              courseMap[ckey] = existing ? existing.id : (() => { const id = genId(); courses.push({ id, name: cname, description: '', color: DEFAULT_CATEGORY_COLOR }); return id; })();
-            }
-            courseId = courseMap[ckey];
-          }
-          const tagRaw = (tagName || '').trim();
-          let tag = tagRaw;
-          if (tagRaw) {
-            const existingTag = tags.find(t => t.name.toLowerCase() === tagRaw.toLowerCase());
-            if (existingTag) tag = existingTag.name;
-            else { tags.push({ id: genId(), name: tagRaw, color: '#4a90d9' }); }
-          }
-          const done = /^(1|true|yes|done|complete|x|✓)$/i.test(String(status || '').trim());
-          importedTasks.push({
-            id: String(genId()),
-            text: taskText.trim(),
-            dueDate: normalizeImportDate(dueDate),
-            courseId: String(courseId || ''),
-            category: String(tag || ''),
-            done: !!done,
-            parentId: ''
-          });
-        }
-        tasks = tasks.concat(importedTasks);
-        if (USE_API && getToken()) {
-          const r = await apiFetch('/api/sync', {
-            method: 'POST',
-            body: JSON.stringify({
-              courses,
-              tags,
-              tasks: tasks.map(t => ({
-                id: t.id, text: t.text, dueDate: t.dueDate || '', courseId: t.courseId || '',
-                category: t.category || '', done: !!t.done, parentId: t.parentId || ''
-              })),
-              merge: true
-            })
-          });
-          if (!r.ok) throw new Error('Sync failed');
-          await loadDataFromApi();
-        } else if (USE_API && !getToken()) {
-          localStorage.setItem('td_courses', JSON.stringify(courses));
-          localStorage.setItem('td_tasks', JSON.stringify(tasks));
-          localStorage.setItem('td_tags', JSON.stringify(tags));
-        } else {
-          save();
-        }
-        renderCategories();
-        renderTags();
-        renderTasks();
+        const importedTasks = await parseImportSource(ext, fileOrPath, fileName);
+        await applyImportedTasks(importedTasks);
         alert(`Imported ${importedTasks.length} task(s).`);
       } catch (err) {
         alert('Import failed: ' + (err.message || 'Unknown error'));
       }
-    });
-    function normalizeImportDate(val) {
-      const s = (val || '').trim();
+    }
+
+    async function parseImportSource(sourceType, data, fileName) {
+      if (sourceType !== 'csv') throw new Error('Only CSV files are supported. Please select a .csv file.');
+      let text;
+      if (typeof data === 'string' && window.electronAPI?.readFileAsText) text = await window.electronAPI.readFileAsText(data);
+      else if (data?.text) text = await data.text();
+      else text = '';
+      if (!text) throw new Error('Could not read file.');
+      const csvText = csvToStandardFormat(text);
+      if (!csvText.trim() || csvText === 'Category,Tag,Task,Due Date,Status\n') throw new Error('No tasks found to import.');
+      return parseCSVToTasks(csvText);
+    }
+
+    async function applyImportedTasks(importedTasks) {
+      if (!importedTasks?.length) throw new Error('No tasks found to import.');
+      tasks = tasks.concat(importedTasks);
+      if (USE_API && getToken()) {
+        const r = await apiFetch('/api/sync', { method: 'POST', body: JSON.stringify({ courses, tags, tasks: tasks.map(t => ({ id: t.id, text: t.text, dueDate: t.dueDate || '', courseId: t.courseId || '', category: t.category || '', done: !!t.done, parentId: t.parentId || '' })), merge: true }) });
+        if (!r.ok) throw new Error('Sync failed');
+        await loadDataFromApi();
+      } else if (USE_API && !getToken()) {
+        localStorage.setItem('td_courses', JSON.stringify(courses));
+        localStorage.setItem('td_tasks', JSON.stringify(tasks));
+        localStorage.setItem('td_tags', JSON.stringify(tags));
+      } else {
+        save();
+      }
+      renderCategories();
+      renderTags();
+      resetOverviewFiltersToAll();
+      renderOverview();
+      // Ensure Add Task panel is expanded and ready for more tasks after import
+      ovAddTaskOpen = true;
+      const addBody = document.getElementById('ovAddTaskBody');
+      const addSymbol = document.getElementById('ovAddTaskSymbol');
+      if (addBody) { addBody.style.maxHeight = 'none'; }
+      if (addSymbol) { addSymbol.textContent = '−'; addSymbol.title = 'Click to collapse'; }
+      requestAnimationFrame(() => {
+        const newTaskEl = document.getElementById('newTask');
+        if (newTaskEl) newTaskEl.focus();
+      });
+    }
+    function normalizeImportDate(val, yearHint) {
+      let s = (val || '').trim();
       if (!s) return '';
+      s = s.replace(/\./g, '/');
+      const year = yearHint || new Date().getFullYear();
       if (/^\d{4}-\d{1,2}-\d{1,2}$/.test(s)) {
         const [y, m, d] = s.split('-').map(n => parseInt(n, 10));
         if (m >= 1 && m <= 12 && d >= 1 && d <= 31) {
           return `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
         }
       }
+      if (/^\d{1,2}\/\d{1,2}\/\d{2}$/.test(s)) {
+        const parts = s.split('/');
+        const y = parseInt(parts[2], 10);
+        const yr = y < 50 ? 2000 + y : 1900 + y;
+        const m = parseInt(parts[0], 10), d = parseInt(parts[1], 10);
+        if (m >= 1 && m <= 12 && d >= 1 && d <= 31) {
+          return `${yr}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+        }
+      }
+      if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(s)) {
+        const parts = s.split('/');
+        const m = parseInt(parts[0], 10), d = parseInt(parts[1], 10), y = parseInt(parts[2], 10);
+        if (m >= 1 && m <= 12 && d >= 1 && d <= 31) {
+          return `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+        }
+      }
+      const weekdayMonthDay = /^(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun)[a-z]*\.?,?\s*(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.?\s+\d{1,2}(?:,?\s+\d{4})?$/i;
+      if (weekdayMonthDay.test(s)) {
+        const parsed = s.replace(/,/g, '') + (s.match(/\d{4}/) ? '' : ' ' + year);
+        const d = new Date(parsed);
+        if (!isNaN(d.getTime())) {
+          const y = d.getFullYear(), mo = d.getMonth() + 1, day = d.getDate();
+          return `${y}-${String(mo).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+        }
+      }
+      const monthDay = /^(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.?\s+\d{1,2}(?:,?\s+\d{4})?$/i;
+      if (monthDay.test(s)) {
+        const parsed = s.replace(/,/g, '') + (s.match(/\d{4}/) ? '' : ' ' + year);
+        const d = new Date(parsed);
+        if (!isNaN(d.getTime())) {
+          const y = d.getFullYear(), mo = d.getMonth() + 1, day = d.getDate();
+          return `${y}-${String(mo).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+        }
+      }
       const d = new Date(s);
-      if (isNaN(d.getTime())) return '';
-      const y = d.getFullYear(), mo = d.getMonth() + 1, day = d.getDate();
-      return `${y}-${String(mo).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+      if (!isNaN(d.getTime())) {
+        const y = d.getFullYear(), mo = d.getMonth() + 1, day = d.getDate();
+        return `${y}-${String(mo).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+      }
+      return '';
     }
     function parseCSVLine(line) {
       const out = [];
@@ -2817,6 +2991,159 @@
       }
       out.push(cur);
       return out.map(s => s.replace(/^"|"$/g, '').trim());
+    }
+
+    function csvToStandardFormat(csvText) {
+      const lines = (csvText || '').split(/\r?\n/).filter(l => l.trim());
+      const norm = s => (s || '').toLowerCase().replace(/[\s_-]/g, '');
+      let tagCol = -1, taskCol = -1, dateCol = -1;
+      let startIdx = 0;
+      if (lines.length > 0) {
+        const firstRow = parseCSVLine(lines[0]);
+        const firstNorm = firstRow.map(c => norm(c));
+        tagCol = firstNorm.findIndex(c => c.includes('tag') || c.includes('course'));
+        taskCol = firstNorm.findIndex(c => c.includes('task') || c.includes('assignment') || c.includes('description'));
+        dateCol = firstNorm.findIndex(c => c.includes('date') || c.includes('due'));
+        const hasHeaders = tagCol >= 0 || taskCol >= 0 || dateCol >= 0 ||
+          firstNorm.some(c => ['category','tag','task','duedate','status'].some(k => c === k || c.includes(k)));
+        if (hasHeaders) startIdx = 1;
+        if (taskCol < 0 && !hasHeaders && firstRow.length <= 2) {
+          taskCol = 0;
+          dateCol = firstRow.length >= 2 ? 1 : -1;
+        } else if (taskCol < 0) taskCol = 0;
+      }
+      const rows = [];
+      const escaped = (s) => (s || '').includes(',') ? '"' + (s || '').replace(/"/g, '""') + '"' : (s || '');
+      for (let i = startIdx; i < lines.length; i++) {
+        const row = parseCSVLine(lines[i]);
+        const getCol = idx => (idx >= 0 && idx < row.length ? row[idx] : '') || '';
+        const tag = (getCol(tagCol) || '').trim();
+        let taskText = (getCol(taskCol) || '').trim();
+        if (!taskText && row.length >= 1) taskText = (getCol(0) || '').trim();
+        const dueDateIso = normalizeImportDate(getCol(dateCol));
+        const dueDate = formatDateAsMDYYYY(dueDateIso) || dueDateIso || '';
+        if (!taskText || taskText.length < 2) continue;
+        rows.push(['School', tag || 'General', taskText, dueDate, 'Open'].map(escaped).join(','));
+      }
+      return 'Category,Tag,Task,Due Date,Status\n' + rows.join('\n');
+    }
+
+    function parseTxtFallback(text) {
+      const items = [];
+      const dateRe = /\b(\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{2,4}|\d{4}[\/\-\.]\d{1,2}[\/\-\.]\d{1,2}|(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.?\s+\d{1,2}(?:,?\s+\d{4})?|(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun)[a-z]*\.?,?\s*(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.?\s+\d{1,2}(?:,?\s+\d{4})?)\b/gi;
+      const yearHint = parseInt((text.match(/\b(20\d{2})\b/) || [])[1], 10) || new Date().getFullYear();
+      let lines = text.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
+      if (lines.length < 2 && text.length > 100) lines = text.split(/\n+|\t/).map(l => l.trim()).filter(l => l.length > 0);
+      let currentDate = '';
+      for (const line of lines) {
+        const dateM = line.match(dateRe);
+        if (dateM) currentDate = normalizeImportDate(dateM[0], yearHint);
+        let taskText = line.replace(dateRe, '').replace(/\s+/g, ' ').trim();
+        if (taskText && taskText.length > 2 && !/^https?:\/\//i.test(taskText)) {
+          items.push({ tag: '', task: taskText, dueDate: currentDate });
+        }
+      }
+      return items;
+    }
+
+    function formatDateAsMDYYYY(isoDate) {
+      if (!isoDate || !/^\d{4}-\d{2}-\d{2}$/.test(isoDate)) return '';
+      const [y, m, d] = isoDate.split('-').map(n => parseInt(n, 10));
+      return `${m}/${d}/${y}`;
+    }
+
+    function parseCSVToTasks(csvText) {
+      let raw = (csvText || '').trim();
+      const codeBlockMatch = raw.match(/```(?:csv)?\s*([\s\S]*?)```/);
+      if (codeBlockMatch) raw = codeBlockMatch[1].trim();
+      const lines = raw.split(/\r?\n/).filter(l => l.trim());
+      const courseMap = {};
+      const importedTasks = [];
+      const COL_KEYS = ['category', 'tag', 'task', 'duedate', 'status'];
+      const norm = s => (s || '').toLowerCase().replace(/[\s_-]/g, '');
+      let colMap = [0, 1, 2, 3, 4];
+      let startIdx = 0;
+      if (lines.length > 0) {
+        const firstRow = parseCSVLine(lines[0]);
+        const firstNorm = firstRow.map(c => norm(c));
+        const matches = COL_KEYS.filter(k => firstNorm.some(c => c === k || c.includes(k) || k.includes(c)));
+        if (matches.length >= 2) {
+          colMap = COL_KEYS.map(k => {
+            const idx = firstNorm.findIndex(c => c.includes(k) || k.includes(c));
+            return idx >= 0 ? idx : -1;
+          });
+          startIdx = 1;
+        }
+      }
+      for (let i = startIdx; i < lines.length; i++) {
+        const row = parseCSVLine(lines[i]);
+        const getCol = idx => (idx >= 0 && idx < row.length ? row[idx] : '') || '';
+        const categoryName = getCol(colMap[0]);
+        const tagName = getCol(colMap[1]);
+        let taskText = getCol(colMap[2]);
+        if (!(taskText || '').trim() && row.length >= 1) taskText = getCol(0);
+        const dueDate = normalizeImportDate(getCol(colMap[3]));
+        const status = getCol(colMap[4]);
+        if (!(taskText || '').trim()) continue;
+        let courseId = '';
+        if (categoryName && categoryName.trim()) {
+          const cname = categoryName.trim();
+          const ckey = cname.toLowerCase();
+          if (!courseMap[ckey]) {
+            const existing = courses.find(c => c.name.toLowerCase() === ckey);
+            courseMap[ckey] = existing ? existing.id : (() => { const id = genId(); courses.push({ id, name: cname, description: '', color: DEFAULT_CATEGORY_COLOR }); return id; })();
+          }
+          courseId = courseMap[ckey];
+        }
+        const tagRaw = (tagName || '').trim();
+        let tag = tagRaw;
+        if (tagRaw) {
+          const existingTag = tags.find(t => t.name.toLowerCase() === tagRaw.toLowerCase());
+          if (existingTag) tag = existingTag.name;
+          else tags.push({ id: genId(), name: tagRaw, color: '#4a90d9' });
+        }
+        const done = /^(1|true|yes|done|complete|x|✓)$/i.test(String(status || '').trim());
+        importedTasks.push({
+          id: String(genId()),
+          text: taskText.trim(),
+          dueDate: dueDate,
+          courseId: String(courseId || ''),
+          category: String(tag || ''),
+          done: !!done,
+          parentId: ''
+        });
+      }
+      return importedTasks;
+    }
+
+    async function saveCSVToWorkingFolder(csvText, baseName) {
+      const filename = (baseName || 'tasks').replace(/\.csv$/i, '');
+      if (typeof window.electronAPI !== 'undefined' && window.electronAPI.saveCSV) {
+        const filePath = await window.electronAPI.saveCSV(csvText, filename);
+        return filePath;
+      }
+      const blob = new Blob([csvText], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename + '.csv';
+      a.click();
+      URL.revokeObjectURL(url);
+      return null;
+    }
+
+    function resetOverviewFiltersToAll() {
+      const fc = document.getElementById('ovFilterCategory');
+      const ft = document.getElementById('ovFilterTag');
+      const fdate = document.getElementById('ovFilterDate');
+      const fstatus = document.getElementById('ovFilterStatus');
+      const ftask = document.getElementById('ovFilterTask');
+      if (fc) fc.value = '';
+      if (ft) ft.value = '';
+      if (fdate) { fdate.value = ''; document.getElementById('ovFilterDateSpecific').style.display = 'none'; }
+      if (fstatus) fstatus.value = '';
+      if (ftask) ftask.value = '';
+      savePreferencesToStorage();
     }
 
     document.getElementById('ovSort').addEventListener('change', () => { savePreferencesToStorage(); renderOverview(); });
@@ -3053,8 +3380,11 @@
     ═══════════════════════════════════════════ */
     document.getElementById('categoriesBody').style.maxHeight = 'none';
     document.getElementById('tagsBody').style.maxHeight = 'none';
-    document.getElementById('addTaskBody').style.maxHeight = 'none';
-
+    document.getElementById('importAiBody').style.maxHeight = '0';
+    document.getElementById('importAiToggle').classList.add('collapsed');
+    document.getElementById('ovAddTaskBody').style.maxHeight = 'none';
+    document.getElementById('ovAddTaskSymbol').textContent = '−';
+    document.getElementById('ovAddTaskSymbol').title = 'Click to collapse';
     async function doAuthInit() {
       const token = getToken();
       if (!token) {

@@ -1,12 +1,14 @@
 {
   "name": "to-do-list",
   "version": "1.0.0",
-  "description": "To-Do List app with courses, categories, and task overview",
+  "description": "TaskTastic – task management app with categories, tags, and overview",
   "main": "main.js",
   "author": "",
   "license": "MIT",
   "scripts": {
     "start": "electron .",
+    "syllabus2csv": "python syllabus_to_csv.py",
+    "http": "node serve-http.js",
     "serve": "node api/server.js",
     "api": "node api/server.js",
     "build": "electron-builder --win",
@@ -14,13 +16,16 @@
   },
   "build": {
     "appId": "com.todolist.app",
-    "productName": "To-Do List",
+    "productName": "TaskTastic",
     "directories": {
       "output": "dist"
     },
     "files": [
       "main.js",
-      "index.html"
+      "preload.js",
+      "index.html",
+      "syllabus_to_csv.py",
+      "pdf_to_csv.py"
     ],
     "win": {
       "target": [
@@ -46,6 +51,8 @@
     "cors": "^2.8.5",
     "express": "^4.21.1",
     "jsonwebtoken": "^9.0.2",
+    "multer": "^2.1.1",
+    "pdf-parse": "^2.4.5",
     "pg": "^8.20.0"
   },
   "devDependencies": {
