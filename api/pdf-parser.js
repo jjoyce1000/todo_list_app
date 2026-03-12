@@ -3,6 +3,7 @@
  * Uses pdf-parse for text extraction, optionally Claude Sonnet 4.6 for interpretation.
  */
 const { PDFParse } = require('pdf-parse');
+const { jsonrepair } = require('jsonrepair');
 const auth = require('./auth');
 
 let Anthropic;
@@ -66,7 +67,7 @@ Example output: {"tasks": [{"task": "Homework 1 due", "date": "2026-01-15", "cou
     const client = new Anthropic();
     const resp = await client.messages.create({
       model: getPdfAiModel(),
-      max_tokens: 4096,
+      max_tokens: 8192,
       system: 'You extract structured task data from syllabi and schedules. Respond only with valid JSON.',
       messages: [{ role: 'user', content: `${prompt}\n\n${content}` }],
       temperature: 0.1,
@@ -90,7 +91,23 @@ Example output: {"tasks": [{"task": "Homework 1 due", "date": "2026-01-15", "cou
       const end = raw.lastIndexOf('}');
       if (start >= 0 && end > start) raw = raw.slice(start, end + 1);
     }
-    const data = JSON.parse(raw);
+    let data;
+    try {
+      data = JSON.parse(raw);
+    } catch (parseErr) {
+      if (/unexpected end of json input|unexpected token|unexpected end/i.test(parseErr.message)) {
+        try {
+          const repaired = jsonrepair(raw);
+          data = JSON.parse(repaired);
+        } catch (repairErr) {
+          const preview = raw.length > 400 ? raw.slice(0, 200) + '...[truncated]...' + raw.slice(-200) : raw;
+          console.warn('[PDF AI] JSON parse failed, repair failed:', repairErr.message, '| raw preview:', preview);
+          throw parseErr;
+        }
+      } else {
+        throw parseErr;
+      }
+    }
     const tasks = data.tasks;
     if (!Array.isArray(tasks)) return null;
     return tasks.map((t) => ({

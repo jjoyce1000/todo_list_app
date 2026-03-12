@@ -1686,6 +1686,7 @@
         filterStatus: document.getElementById('ovFilterStatus')?.value || '',
         filterSubtasks: document.getElementById('ovFilterSubtasks')?.value || '',
         collapsedSubtasks: Array.from(collapsedSubtasks || []),
+        addTaskCollapsed: !ovAddTaskOpen,
         addTaskCategory: document.getElementById('categorySelect')?.value || '',
         addTaskTag: document.getElementById('tagSelect')?.value || ''
       };
@@ -1730,6 +1731,23 @@
       const fsub = document.getElementById('ovFilterSubtasks');
       if (fsub && prefs.filterSubtasks !== undefined) fsub.value = prefs.filterSubtasks;
       if (Array.isArray(prefs.collapsedSubtasks)) collapsedSubtasks = new Set(prefs.collapsedSubtasks);
+      ovAddTaskOpen = prefs.addTaskCollapsed === false;
+      const addBody = document.getElementById('ovAddTaskBody');
+      const addSymbol = document.getElementById('ovAddTaskSymbol');
+      const addToggle = document.getElementById('ovAddTaskToggle');
+      if (addBody && addSymbol && addToggle) {
+        if (ovAddTaskOpen) {
+          addBody.style.maxHeight = 'none';
+          addSymbol.textContent = '−';
+          addSymbol.title = 'Click to collapse';
+          addToggle.classList.remove('collapsed');
+        } else {
+          addBody.style.maxHeight = '0';
+          addSymbol.textContent = '+';
+          addSymbol.title = 'Click to expand';
+          addToggle.classList.add('collapsed');
+        }
+      }
       const catSel = document.getElementById('categorySelect');
       const tagSel = document.getElementById('tagSelect');
       if (catSel && prefs.addTaskCategory !== undefined) catSel.value = prefs.addTaskCategory;
@@ -2598,7 +2616,7 @@
     let categoriesOpen = true;
     let tagsOpen = true;
     let importAiOpen = false;
-    let ovAddTaskOpen = true;
+    let ovAddTaskOpen = false; // collapsed by default for new users
 
     function toggleCategories() {
       categoriesOpen = !categoriesOpen;
@@ -2652,6 +2670,7 @@
       ovAddTaskOpen = !ovAddTaskOpen;
       const body   = document.getElementById('ovAddTaskBody');
       const symbol = document.getElementById('ovAddTaskSymbol');
+      const toggle = document.getElementById('ovAddTaskToggle');
       if (ovAddTaskOpen) {
         body.style.maxHeight = body.scrollHeight + 'px';
         body.addEventListener('transitionend', () => {
@@ -2659,12 +2678,15 @@
         }, { once: true });
         symbol.textContent = '−';
         symbol.title = 'Click to collapse';
+        toggle?.classList.remove('collapsed');
       } else {
         body.style.maxHeight = body.scrollHeight + 'px';
         requestAnimationFrame(() => { body.style.maxHeight = '0'; });
         symbol.textContent = '+';
         symbol.title = 'Click to expand';
+        toggle?.classList.add('collapsed');
       }
+      savePreferencesToStorage();
     }
 
     /* ═══════════════════════════════════════════
@@ -3019,6 +3041,7 @@
     async function applyImportedTasks(importedTasks) {
       if (!importedTasks?.length) throw new Error('No tasks found to import.');
       tasks = tasks.concat(importedTasks);
+      // Sync courses and tags (including any newly imported) to user config
       if (USE_API && getToken()) {
         const r = await apiFetch('/api/sync', { method: 'POST', body: JSON.stringify({ courses, tags, tasks: tasks.map(t => ({ id: t.id, text: t.text, dueDate: t.dueDate || '', courseId: t.courseId || '', category: t.category || '', done: !!t.done, parentId: t.parentId || '' })), merge: true }) });
         if (!r.ok) throw new Error('Sync failed');
@@ -3038,8 +3061,11 @@
       ovAddTaskOpen = true;
       const addBody = document.getElementById('ovAddTaskBody');
       const addSymbol = document.getElementById('ovAddTaskSymbol');
+      const addToggle = document.getElementById('ovAddTaskToggle');
       if (addBody) { addBody.style.maxHeight = 'none'; }
       if (addSymbol) { addSymbol.textContent = '−'; addSymbol.title = 'Click to collapse'; }
+      if (addToggle) addToggle.classList.remove('collapsed');
+      savePreferencesToStorage();
       requestAnimationFrame(() => {
         const newTaskEl = document.getElementById('newTask');
         if (newTaskEl) newTaskEl.focus();
@@ -3504,9 +3530,10 @@
     document.getElementById('tagsBody').style.maxHeight = 'none';
     document.getElementById('importAiBody').style.maxHeight = '0';
     document.getElementById('importAiToggle').classList.add('collapsed');
-    document.getElementById('ovAddTaskBody').style.maxHeight = 'none';
-    document.getElementById('ovAddTaskSymbol').textContent = '−';
-    document.getElementById('ovAddTaskSymbol').title = 'Click to collapse';
+    document.getElementById('ovAddTaskBody').style.maxHeight = '0';
+    document.getElementById('ovAddTaskToggle').classList.add('collapsed');
+    document.getElementById('ovAddTaskSymbol').textContent = '+';
+    document.getElementById('ovAddTaskSymbol').title = 'Click to expand';
     async function doAuthInit() {
       const token = getToken();
       if (!token) {
