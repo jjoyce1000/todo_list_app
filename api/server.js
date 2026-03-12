@@ -269,6 +269,7 @@ app.post('/api/import/pdf', authMiddleware, (req, res, next) => {
     }
     const filename = req.file.originalname || 'document.pdf';
     const { tasks, parser } = await parsePdfToTasks(req.file.buffer, filename);
+    console.log(`[PDF import] filename=${filename} parser=${parser} tasks=${tasks.length}`);
     res.json({ tasks, parser });
   } catch (err) {
     console.error('PDF import error:', err);

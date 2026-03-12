@@ -2913,6 +2913,7 @@
           const csvText = await window.electronAPI.runPdfToCsv(pdfPath);
           const importedTasks = await parseImportSource('csv', { text: () => Promise.resolve(csvText) }, 'imported.csv');
           await applyImportedTasks(importedTasks);
+          console.log('[PDF import] source=Electron tasks=' + importedTasks.length);
           alert(`Imported ${importedTasks.length} task(s) from PDF.`);
         } catch (err) {
           alert('PDF import failed: ' + (err.message || 'Unknown error'));
@@ -2940,6 +2941,7 @@
       try {
         const { tasks: importedTasks, parser } = await importPdfViaApi(file);
         await applyImportedTasks(importedTasks);
+        console.log('[PDF import] source=API filename=' + (file.name || '') + ' parser=' + parser + ' tasks=' + importedTasks.length);
         const parserHint = parser === 'anthropic' ? ' (AI)' : '';
         alert(`Imported ${importedTasks.length} task(s) from PDF${parserHint}.`);
       } catch (err) {
@@ -2962,6 +2964,7 @@
       try {
         const importedTasks = await parseImportSource(ext, fileOrPath, fileName);
         await applyImportedTasks(importedTasks);
+        console.log('[CSV import] filename=' + fileName + ' tasks=' + importedTasks.length);
         alert(`Imported ${importedTasks.length} task(s).`);
       } catch (err) {
         alert('Import failed: ' + (err.message || 'Unknown error'));

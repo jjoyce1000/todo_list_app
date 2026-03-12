@@ -58,6 +58,7 @@ Rules:
 - Skip headers, column labels, and meta text (e.g. "Week", "Monday", "Date")
 - Use the course name from the document title or header
 - Dates: prefer ISO YYYY-MM-DD; empty string if unknown
+- Include ALL weeks from the start: calendar grids often have Mon–Fri columns; the first date in each row is Monday (e.g. 1/12). Do NOT skip Week 1 or the first week's content. Assign content to the correct date column (e.g. Monday 1/12, Tuesday 1/13, etc.)
 
 Example output: {"tasks": [{"task": "Homework 1 due", "date": "2026-01-15", "course": "M156"}, ...]}`;
 
@@ -70,6 +71,13 @@ Example output: {"tasks": [{"task": "Homework 1 due", "date": "2026-01-15", "cou
       messages: [{ role: 'user', content: `${prompt}\n\n${content}` }],
       temperature: 0.1,
     });
+    const usage = resp.usage;
+    if (usage) {
+      const input = usage.input_tokens ?? 0;
+      const output = usage.output_tokens ?? 0;
+      const total = (usage.input_tokens ?? 0) + (usage.output_tokens ?? 0);
+      console.log(`[PDF AI] tokens: input=${input} output=${output} total=${total}`);
+    }
     const textBlock = resp.content?.find((b) => b.type === 'text');
     let raw = textBlock?.text;
     if (!raw) return null;
