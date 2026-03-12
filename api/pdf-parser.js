@@ -12,7 +12,11 @@ try {
   Anthropic = null;
 }
 
-const PDF_AI_MODEL = process.env.PDF_AI_MODEL || 'claude-sonnet-4-6';
+// Anthropic API uses "claude-sonnet-4-6"; "anthropic.claude-sonnet-4-6" is AWS Bedrock format
+function getPdfAiModel() {
+  const raw = (process.env.PDF_AI_MODEL || 'claude-sonnet-4-6').trim();
+  return raw.startsWith('anthropic.') ? raw.slice(10) : raw;
+}
 
 /**
  * Extract text from PDF buffer.
@@ -60,15 +64,24 @@ Example output: {"tasks": [{"task": "Homework 1 due", "date": "2026-01-15", "cou
   try {
     const client = new Anthropic();
     const resp = await client.messages.create({
-      model: PDF_AI_MODEL,
+      model: getPdfAiModel(),
       max_tokens: 4096,
       system: 'You extract structured task data from syllabi and schedules. Respond only with valid JSON.',
       messages: [{ role: 'user', content: `${prompt}\n\n${content}` }],
       temperature: 0.1,
     });
     const textBlock = resp.content?.find((b) => b.type === 'text');
-    const raw = textBlock?.text;
+    let raw = textBlock?.text;
     if (!raw) return null;
+    raw = raw.trim();
+    // Strip markdown code blocks (```json ... ``` or ``` ... ```)
+    raw = raw.replace(/^```(?:json)?\s*\r?\n?/i, '').replace(/\r?\n?```\s*$/i, '').trim();
+    // Fallback: if still has backticks or doesn't start with {, extract JSON object
+    if (raw.includes('`') || !raw.startsWith('{')) {
+      const start = raw.indexOf('{');
+      const end = raw.lastIndexOf('}');
+      if (start >= 0 && end > start) raw = raw.slice(start, end + 1);
+    }
     const data = JSON.parse(raw);
     const tasks = data.tasks;
     if (!Array.isArray(tasks)) return null;

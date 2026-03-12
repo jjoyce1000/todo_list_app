@@ -72,7 +72,38 @@
     .auth-error-inline { color: #e74c3c; font-size: 0.8rem; margin-left: 0.25rem; }
 
     .header-center { flex: 1; min-width: 0; }
-    .header-right { display: flex; gap: 0.5rem; flex-shrink: 0; }
+    .header-right { display: flex; gap: 0.5rem; flex-shrink: 0; align-items: center; }
+    .import-group { display: flex; flex-direction: column; gap: 0.25rem; align-items: stretch; }
+    .import-buttons-row { display: flex; gap: 0.5rem; }
+    .import-progress {
+      display: none;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.75rem;
+      color: rgba(255,255,255,0.95);
+      height: 20px;
+    }
+    .import-progress.importing { display: flex; }
+    .import-progress-bar {
+      width: 80px;
+      height: 4px;
+      background: rgba(255,255,255,0.4);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .import-progress-bar::after {
+      content: '';
+      display: block;
+      height: 100%;
+      width: 30%;
+      background: white;
+      border-radius: 2px;
+      animation: import-progress-pulse 1.2s ease-in-out infinite;
+    }
+    @keyframes import-progress-pulse {
+      0%, 100% { transform: translateX(-100%); }
+      50% { transform: translateX(230%); }
+    }
 
     .page-header h1 {
       color: white;
@@ -1407,8 +1438,16 @@
       </div>
     </div>
     <div class="header-right">
-      <button class="import-csv-btn" id="csvImportBtn" title="Import from CSV">📥 Import CSV</button>
-      <button class="import-pdf-btn" id="pdfImportBtn" title="Import from PDF (syllabus, schedule)">📄 Import PDF</button>
+      <div class="import-group">
+        <div class="import-buttons-row">
+          <button class="import-csv-btn" id="csvImportBtn" title="Import from CSV">📥 Import CSV</button>
+          <button class="import-pdf-btn" id="pdfImportBtn" title="Import from PDF (syllabus, schedule)">📄 Import PDF</button>
+        </div>
+        <div class="import-progress" id="importProgress" aria-hidden="true">
+          <div class="import-progress-bar"></div>
+          <span class="import-progress-text" id="importProgressText">Importing…</span>
+        </div>
+      </div>
       <button class="reset-btn" id="resetBtn">🗑 Reset All Tasks</button>
       <button class="settings-gear-btn" id="configBtn" title="Settings – Categories, Tags">⚙</button>
     </div>
@@ -2838,6 +2877,23 @@
       if (e.target.id === 'configPanelOverlay') document.getElementById('configPanelOverlay').classList.add('hidden');
     });
 
+    function showImportProgress(label = 'Importing…') {
+      const el = document.getElementById('importProgress');
+      const textEl = document.getElementById('importProgressText');
+      if (el && textEl) {
+        textEl.textContent = label;
+        el.classList.add('importing');
+        el.setAttribute('aria-hidden', 'false');
+      }
+    }
+    function hideImportProgress() {
+      const el = document.getElementById('importProgress');
+      if (el) {
+        el.classList.remove('importing');
+        el.setAttribute('aria-hidden', 'true');
+      }
+    }
+
     document.getElementById('csvImportBtn').addEventListener('click', async () => {
       if (typeof window.electronAPI !== 'undefined' && window.electronAPI.showImportDialog) {
         const chosen = await window.electronAPI.showImportDialog();
@@ -2852,6 +2908,7 @@
       if (typeof window.electronAPI !== 'undefined' && window.electronAPI.showImportPdfDialog && window.electronAPI.runPdfToCsv) {
         const pdfPath = await window.electronAPI.showImportPdfDialog();
         if (!pdfPath) return;
+        showImportProgress('Importing PDF…');
         try {
           const csvText = await window.electronAPI.runPdfToCsv(pdfPath);
           const importedTasks = await parseImportSource('csv', { text: () => Promise.resolve(csvText) }, 'imported.csv');
@@ -2859,6 +2916,8 @@
           alert(`Imported ${importedTasks.length} task(s) from PDF.`);
         } catch (err) {
           alert('PDF import failed: ' + (err.message || 'Unknown error'));
+        } finally {
+          hideImportProgress();
         }
       } else {
         if (!USE_API) {
@@ -2877,6 +2936,7 @@
       const file = e.target.files?.[0];
       e.target.value = '';
       if (!file) return;
+      showImportProgress('Importing PDF…');
       try {
         const { tasks: importedTasks, parser } = await importPdfViaApi(file);
         await applyImportedTasks(importedTasks);
@@ -2884,6 +2944,8 @@
         alert(`Imported ${importedTasks.length} task(s) from PDF${parserHint}.`);
       } catch (err) {
         alert('PDF import failed: ' + (err.message || 'Unknown error'));
+      } finally {
+        hideImportProgress();
       }
     });
 
@@ -2896,12 +2958,15 @@
     });
 
     async function handleImport(ext, fileOrPath, fileName) {
+      showImportProgress('Importing CSV…');
       try {
         const importedTasks = await parseImportSource(ext, fileOrPath, fileName);
         await applyImportedTasks(importedTasks);
         alert(`Imported ${importedTasks.length} task(s).`);
       } catch (err) {
         alert('Import failed: ' + (err.message || 'Unknown error'));
+      } finally {
+        hideImportProgress();
       }
     }
 
