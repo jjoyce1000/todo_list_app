@@ -1,19 +1,18 @@
 /**
  * PDF to tasks parser for API.
- * Uses pdf-parse for text extraction, optionally OpenAI for interpretation.
+ * Uses pdf-parse for text extraction, optionally Claude 3.5 Sonnet for interpretation.
  */
 const { PDFParse } = require('pdf-parse');
 const auth = require('./auth');
 
-let OpenAI;
+let Anthropic;
 try {
-  const openai = require('openai');
-  OpenAI = openai.OpenAI || openai.default || openai;
+  ({ Anthropic } = require('@anthropic-ai/sdk'));
 } catch {
-  OpenAI = null;
+  Anthropic = null;
 }
 
-const PDF_AI_MODEL = process.env.PDF_AI_MODEL || 'gpt-4o';
+const PDF_AI_MODEL = process.env.PDF_AI_MODEL || 'claude-3-5-sonnet-20241022';
 
 /**
  * Extract text from PDF buffer.
@@ -31,10 +30,10 @@ async function extractPdfText(buffer) {
 }
 
 /**
- * Parse PDF content with OpenAI when OPENAI_API_KEY is set.
+ * Parse PDF content with Claude 3.5 Sonnet when ANTHROPIC_API_KEY is set.
  */
 async function parseWithAi(text, filename) {
-  if (!OpenAI || !process.env.OPENAI_API_KEY) return null;
+  if (!Anthropic || !process.env.ANTHROPIC_API_KEY) return null;
 
   const content = `Filename: ${filename || 'document.pdf'}\n\n--- Extracted Text ---\n${(text || '').slice(0, 90000)}`;
 
@@ -54,17 +53,16 @@ Rules:
 Example output: {"tasks": [{"task": "Homework 1 due", "date": "2026-01-15", "course": "M156"}, ...]}`;
 
   try {
-    const client = new OpenAI();
-    const resp = await client.chat.completions.create({
+    const client = new Anthropic();
+    const resp = await client.messages.create({
       model: PDF_AI_MODEL,
-      messages: [
-        { role: 'system', content: 'You extract structured task data from syllabi and schedules. Respond only with valid JSON.' },
-        { role: 'user', content: `${prompt}\n\n${content}` },
-      ],
-      response_format: { type: 'json_object' },
+      max_tokens: 4096,
+      system: 'You extract structured task data from syllabi and schedules. Respond only with valid JSON.',
+      messages: [{ role: 'user', content: `${prompt}\n\n${content}` }],
       temperature: 0.1,
     });
-    const raw = resp.choices[0]?.message?.content;
+    const textBlock = resp.content?.find((b) => b.type === 'text');
+    const raw = textBlock?.text;
     if (!raw) return null;
     const data = JSON.parse(raw);
     const tasks = data.tasks;
@@ -84,7 +82,7 @@ Example output: {"tasks": [{"task": "Homework 1 due", "date": "2026-01-15", "cou
 }
 
 /**
- * Simple regex-based fallback when OpenAI is not available.
+ * Simple regex-based fallback when Claude is not available.
  */
 function parseWithRegex(text, filename) {
   const items = [];
