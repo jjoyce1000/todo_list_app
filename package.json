@@ -13,6 +13,8 @@
     "api": "node api/server.js",
     "test:pdf-api": "node api/test-pdf-import.js",
     "test:pdf-parser": "node api/test-pdf-parser.js",
+    "test:anthropic": "node api/test-anthropic.js",
+    "test:pdf-anthropic": "node api/test-pdf-anthropic-local.js",
     "build": "electron-builder --win",
     "dist": "electron-builder --win"
   },

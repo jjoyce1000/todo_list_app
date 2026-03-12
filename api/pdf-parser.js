@@ -1,6 +1,6 @@
 /**
  * PDF to tasks parser for API.
- * Uses pdf-parse for text extraction, optionally Claude 3.5 Sonnet for interpretation.
+ * Uses pdf-parse for text extraction, optionally Claude Sonnet 4.6 for interpretation.
  */
 const { PDFParse } = require('pdf-parse');
 const auth = require('./auth');
@@ -12,7 +12,7 @@ try {
   Anthropic = null;
 }
 
-const PDF_AI_MODEL = process.env.PDF_AI_MODEL || 'claude-3-5-sonnet-20241022';
+const PDF_AI_MODEL = process.env.PDF_AI_MODEL || 'claude-sonnet-4-6';
 
 /**
  * Extract text from PDF buffer.
@@ -29,11 +29,16 @@ async function extractPdfText(buffer) {
   }
 }
 
+function hasAnthropicKey() {
+  const key = (process.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_AUTH_TOKEN || '').trim();
+  return key.length > 0;
+}
+
 /**
- * Parse PDF content with Claude 3.5 Sonnet when ANTHROPIC_API_KEY is set.
+ * Parse PDF content with Claude Sonnet 4.6 when ANTHROPIC_API_KEY is set.
  */
 async function parseWithAi(text, filename) {
-  if (!Anthropic || !process.env.ANTHROPIC_API_KEY) return null;
+  if (!Anthropic || !hasAnthropicKey()) return null;
 
   const content = `Filename: ${filename || 'document.pdf'}\n\n--- Extracted Text ---\n${(text || '').slice(0, 90000)}`;
 
@@ -76,7 +81,8 @@ Example output: {"tasks": [{"task": "Homework 1 due", "date": "2026-01-15", "cou
       done: false,
       parentId: '',
     })).filter((t) => t.text.length > 0);
-  } catch {
+  } catch (err) {
+    console.warn('PDF parseWithAi failed, falling back to regex:', err.message);
     return null;
   }
 }

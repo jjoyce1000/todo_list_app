@@ -2878,9 +2878,10 @@
       e.target.value = '';
       if (!file) return;
       try {
-        const importedTasks = await importPdfViaApi(file);
+        const { tasks: importedTasks, parser } = await importPdfViaApi(file);
         await applyImportedTasks(importedTasks);
-        alert(`Imported ${importedTasks.length} task(s) from PDF.`);
+        const parserHint = parser === 'anthropic' ? ' (AI)' : '';
+        alert(`Imported ${importedTasks.length} task(s) from PDF${parserHint}.`);
       } catch (err) {
         alert('PDF import failed: ' + (err.message || 'Unknown error'));
       }
@@ -2919,7 +2920,7 @@
       let tasks = data.tasks || [];
       if (!tasks.length) throw new Error('No tasks found in PDF.');
       tasks = ensureCoursesForImportedTasks(tasks);
-      return tasks;
+      return { tasks, parser: data.parser || 'unknown' };
     }
 
     function ensureCoursesForImportedTasks(importedTasks) {

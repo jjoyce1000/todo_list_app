@@ -64,7 +64,7 @@ async function run() {
   console.log('Task count:', taskCount);
   console.log('');
   if (parser === 'anthropic') {
-    console.log('✓ Using Anthropic API (Claude 3.5 Sonnet)');
+    console.log('✓ Using Anthropic API (Claude Sonnet 4.6)');
   } else if (parser === 'regex') {
     console.log('✗ Using regex fallback (ANTHROPIC_API_KEY not set or AI returned no tasks)');
   } else {
