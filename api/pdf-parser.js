@@ -1,6 +1,7 @@
 /**
  * PDF to tasks parser for API.
  * Uses pdf-parse for text extraction, optionally Claude Sonnet 4.6 for interpretation.
+ * Tries calendar-grid parsing first for correct date-to-task alignment.
  */
 const { PDFParse } = require('pdf-parse');
 const { jsonrepair } = require('jsonrepair');
@@ -59,7 +60,8 @@ Rules:
 - Skip headers, column labels, and meta text (e.g. "Week", "Monday", "Date")
 - Use the course name from the document title or header
 - Dates: prefer ISO YYYY-MM-DD; empty string if unknown
-- Include ALL weeks from the start: calendar grids often have Mon–Fri columns; the first date in each row is Monday (e.g. 1/12). Do NOT skip Week 1 or the first week's content. Assign content to the correct date column (e.g. Monday 1/12, Tuesday 1/13, etc.)
+- Include ALL weeks from the start: calendar grids often have Mon–Fri columns; the first date in each row is Monday (e.g. 1/12). Do NOT skip Week 1 or the first week's content.
+- CRITICAL – Date alignment in schedule grids: When the document has a grid with date columns (e.g. Mon 1/12 | Tue 1/13 | Wed 1/14 | Thu 1/15 | Fri 1/16), each task belongs to the date of its COLUMN. The first content cell maps to Monday's date, the second to Tuesday's, the third to Wednesday's, etc. "Section 5.5 - Substitution" in the Friday column must get Friday's date (e.g. 1/16), NOT Monday's (1/12). Match each task to the date of the column it appears under.
 
 Example output: {"tasks": [{"task": "Homework 1 due", "date": "2026-01-15", "course": "M156"}, ...]}`;
 
@@ -115,7 +117,8 @@ Example output: {"tasks": [{"task": "Homework 1 due", "date": "2026-01-15", "cou
       text: String(t.task || '').trim(),
       dueDate: String(t.date || '').trim(),
       courseId: '',
-      category: String(t.course || 'General').trim() || 'General',
+      category: 'School',
+      tag: String(t.course || 'General').trim() || 'General',
       done: false,
       parentId: '',
     })).filter((t) => t.text.length > 0);
@@ -206,7 +209,8 @@ function parseWithRegex(text, filename) {
       text: taskPart,
       dueDate: currentDate,
       courseId: '',
-      category: course,
+      category: 'School',
+      tag: course,
       done: false,
       parentId: '',
     });
@@ -240,6 +244,126 @@ function extractCourse(text, filename) {
 }
 
 /**
+ * Parse calendar grid from text: date row + content rows with column alignment.
+ * Splits lines by 2+ spaces or tabs to detect columns. Maps each content cell to its column's date.
+ */
+function parseCalendarGridFromText(text, filename) {
+  const yearHint = extractYearHint(text, filename);
+  const course = extractCourse(text, filename);
+  const items = [];
+  const seen = new Set();
+  const dateRe = /\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{2,4}|\d{4}[\/\-\.]\d{1,2}[\/\-\.]\d{1,2}|(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.?\s+\d{1,2}(?:,?\s+\d{4})?/gi;
+  const noise = new Set(['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'week', 'keew', 'mon', 'tue', 'wed', 'thu', 'fri']);
+
+  function normDate(s) {
+    if (!s || !s.trim()) return '';
+    const m = String(s).match(/(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2,4})/);
+    if (m) {
+      let [, mo, d, y] = m;
+      y = parseInt(y, 10);
+      if (y < 100) y = y < 50 ? 2000 + y : 1900 + y;
+      if (y < 2024) y = yearHint;
+      mo = parseInt(mo, 10);
+      d = parseInt(d, 10);
+      if (mo >= 1 && mo <= 12 && d >= 1 && d <= 31) return `${y}-${String(mo).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+    }
+    const monthRe = /(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.?\s+(\d{1,2})(?:,?\s+(\d{4}))?/i;
+    const mm = String(s).match(monthRe);
+    if (mm) {
+      const y = mm[3] ? parseInt(mm[3], 10) : yearHint;
+      try {
+        const dt = new Date(`${mm[1]} ${mm[2]} ${y}`);
+        if (!isNaN(dt.getTime())) return dt.toISOString().slice(0, 10);
+      } catch (_) {}
+    }
+    return '';
+  }
+
+  function looksLikeDate(cell) {
+    if (!cell || !cell.trim()) return false;
+    return /^\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{2,4}$/.test(cell.trim()) ||
+      /^\d{4}[\/\-\.]\d{1,2}[\/\-\.]\d{1,2}$/.test(cell.trim()) ||
+      /^(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.?\s+\d{1,2}(?:,?\s+\d{4})?$/i.test(cell.trim());
+  }
+
+  function addTask(task, dateIso) {
+    task = (task || '').replace(dateRe, '').replace(/\s+/g, ' ').trim();
+    task = task.replace(/^(?:readings?|topic|assessment|homework|lab)\s*[:\-]\s*/i, '');
+    if (!task || task.length < 2) return;
+    const tl = task.toLowerCase();
+    if (noise.has(tl) || tl.startsWith('http') || /^page\s+\d+$/i.test(task)) return;
+    if (/\d+\s*keew/i.test(task)) return;
+    const key = `${tl}|${dateIso}`;
+    if (seen.has(key)) return;
+    seen.add(key);
+    items.push({
+      id: auth.genId(),
+      text: task,
+      dueDate: dateIso || '',
+      courseId: '',
+      category: 'School',
+      tag: course,
+      done: false,
+      parentId: '',
+    });
+  }
+
+  const lines = (text || '').split(/\r?\n/).filter((l) => l.trim());
+  let dateCols = null;
+  let verticalColIndex = 0;
+  let lastTask = null;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    let cells = line.split(/\t+|\s{2,}/).map((c) => c.trim()).filter(Boolean);
+
+    const dateCount = cells.filter((c) => looksLikeDate(c)).length;
+    const isDateRow = dateCount >= 3 && cells.some((c) => normDate(c));
+
+    if (isDateRow) {
+      dateCols = [];
+      for (let j = 0; j < cells.length; j++) {
+        const iso = normDate(cells[j]);
+        if (iso) dateCols.push({ index: j, date: iso });
+      }
+      verticalColIndex = 0;
+      lastTask = null;
+      continue;
+    }
+
+    if (dateCols && dateCols.length >= 3) {
+      const isWeekLabel = /^WEEK\s+\d+$/i.test(line.trim()) || /^\d+\s*keew$/i.test(line.trim());
+      if (isWeekLabel) continue;
+
+      if (cells.length >= dateCols.length) {
+        for (const { index, date } of dateCols) {
+          const cell = cells[index] || '';
+          if (cell && !looksLikeDate(cell)) addTask(cell, date);
+        }
+      } else if (cells.length === 1 && dateCols[verticalColIndex % dateCols.length]) {
+        const { date } = dateCols[verticalColIndex % dateCols.length];
+        const cell = cells[0] || line.trim();
+        if (cell && !looksLikeDate(cell)) {
+          const isContinuation = lastTask &&
+            /section\s*\d|^\d+\.\d+/i.test(lastTask.text) &&
+            /^[a-z\-]+$/i.test(cell) && cell.length < 25;
+          if (isContinuation) {
+            lastTask.text = lastTask.text + ' - ' + cell;
+            verticalColIndex++;
+          } else {
+            addTask(cell, date);
+            lastTask = items[items.length - 1];
+            verticalColIndex++;
+          }
+        }
+      }
+    }
+  }
+
+  return items.length > 0 ? items : null;
+}
+
+/**
  * Parse PDF buffer into tasks.
  * @param {Buffer} buffer - PDF file buffer
  * @param {string} filename - Original filename for hints
@@ -251,7 +375,12 @@ async function parsePdfToTasks(buffer, filename = 'document.pdf') {
     throw new Error('Could not extract text from PDF or PDF appears empty.');
   }
 
-  let tasks = await parseWithAi(text, filename);
+  let tasks = parseCalendarGridFromText(text, filename);
+  if (tasks && tasks.length > 0) {
+    return { tasks, parser: 'calendar-grid' };
+  }
+
+  tasks = await parseWithAi(text, filename);
   if (tasks && tasks.length > 0) {
     return { tasks, parser: 'anthropic' };
   }

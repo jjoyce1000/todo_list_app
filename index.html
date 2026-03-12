@@ -3022,7 +3022,8 @@
           c = { id: genId(), name: cat, description: '', color: DEFAULT_CATEGORY_COLOR };
           courses.push(c);
         }
-        return { ...t, courseId: c.id };
+        const tagVal = (t.tag !== undefined ? t.tag : t.category);
+        return { ...t, courseId: c.id, category: String(tagVal || '').trim() };
       });
     }
 
