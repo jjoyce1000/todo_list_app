@@ -12,6 +12,7 @@
     "serve": "node api/server.js",
     "api": "node api/server.js",
     "test:pdf-api": "node api/test-pdf-import.js",
+    "test:pdf-parser": "node api/test-pdf-parser.js",
     "build": "electron-builder --win",
     "dist": "electron-builder --win"
   },

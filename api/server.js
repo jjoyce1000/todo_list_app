@@ -268,8 +268,8 @@ app.post('/api/import/pdf', authMiddleware, (req, res, next) => {
       return res.status(400).json({ error: 'No PDF file uploaded. Use form field "file".' });
     }
     const filename = req.file.originalname || 'document.pdf';
-    const tasks = await parsePdfToTasks(req.file.buffer, filename);
-    res.json({ tasks });
+    const { tasks, parser } = await parsePdfToTasks(req.file.buffer, filename);
+    res.json({ tasks, parser });
   } catch (err) {
     console.error('PDF import error:', err);
     res.status(400).json({ error: err.message || 'PDF parsing failed' });

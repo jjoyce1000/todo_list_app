@@ -180,7 +180,7 @@ function extractCourse(text, filename) {
  * Parse PDF buffer into tasks.
  * @param {Buffer} buffer - PDF file buffer
  * @param {string} filename - Original filename for hints
- * @returns {Promise<Array>} Array of task objects
+ * @returns {Promise<{tasks: Array, parser: string}>} tasks and parser used ('anthropic' or 'regex')
  */
 async function parsePdfToTasks(buffer, filename = 'document.pdf') {
   const text = await extractPdfText(buffer);
@@ -189,13 +189,14 @@ async function parsePdfToTasks(buffer, filename = 'document.pdf') {
   }
 
   let tasks = await parseWithAi(text, filename);
-  if (!tasks || tasks.length === 0) {
-    tasks = parseWithRegex(text, filename);
+  if (tasks && tasks.length > 0) {
+    return { tasks, parser: 'anthropic' };
   }
+  tasks = parseWithRegex(text, filename);
   if (!tasks || tasks.length === 0) {
     throw new Error('No tasks found in PDF.');
   }
-  return tasks;
+  return { tasks, parser: 'regex' };
 }
 
 module.exports = { parsePdfToTasks, extractPdfText };
