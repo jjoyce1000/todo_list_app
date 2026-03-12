@@ -1380,7 +1380,7 @@
             <span class="toggle-icon">▼</span>
           </div>
           <div class="collapsible-body" id="importAiBody">
-            <p class="import-hint" style="margin:0;font-size:0.9rem">Use Import button for CSV, PDF, or TXT files. PDF (Electron): uses <code>pdf_to_csv.py</code>; set <code>OPENAI_API_KEY</code> for AI-powered parsing (GPT-4o).</p>
+            <p class="import-hint" style="margin:0;font-size:0.9rem">Use Import button for CSV or PDF. PDF: web app uses API (log in required); Electron uses <code>pdf_to_csv.py</code>. Set <code>OPENAI_API_KEY</code> on server for AI parsing.</p>
           </div>
         </div>
 
@@ -1414,6 +1414,7 @@
     </div>
   </div>
   <input type="file" id="csvImportInput" accept=".csv" style="display:none">
+  <input type="file" id="pdfImportInput" accept=".pdf" style="display:none">
 
   <div class="app-wrapper" id="appWrapper">
     <!-- ══════════════ TASK OVERVIEW PANE ══════════════ -->
@@ -2848,15 +2849,36 @@
     });
 
     document.getElementById('pdfImportBtn').addEventListener('click', async () => {
-      if (typeof window.electronAPI === 'undefined' || !window.electronAPI.showImportPdfDialog || !window.electronAPI.runPdfToCsv) {
-        alert('PDF import is available in the desktop app. Run: npm start');
-        return;
+      if (typeof window.electronAPI !== 'undefined' && window.electronAPI.showImportPdfDialog && window.electronAPI.runPdfToCsv) {
+        const pdfPath = await window.electronAPI.showImportPdfDialog();
+        if (!pdfPath) return;
+        try {
+          const csvText = await window.electronAPI.runPdfToCsv(pdfPath);
+          const importedTasks = await parseImportSource('csv', { text: () => Promise.resolve(csvText) }, 'imported.csv');
+          await applyImportedTasks(importedTasks);
+          alert(`Imported ${importedTasks.length} task(s) from PDF.`);
+        } catch (err) {
+          alert('PDF import failed: ' + (err.message || 'Unknown error'));
+        }
+      } else {
+        if (!USE_API) {
+          alert('PDF import requires the web app. Open the app from your deployed URL (e.g. https://your-app.onrender.com) to use this feature.');
+          return;
+        }
+        if (!getToken()) {
+          alert('Please log in to import PDF.');
+          return;
+        }
+        document.getElementById('pdfImportInput').click();
       }
-      const pdfPath = await window.electronAPI.showImportPdfDialog();
-      if (!pdfPath) return;
+    });
+
+    document.getElementById('pdfImportInput').addEventListener('change', async (e) => {
+      const file = e.target.files?.[0];
+      e.target.value = '';
+      if (!file) return;
       try {
-        const csvText = await window.electronAPI.runPdfToCsv(pdfPath);
-        const importedTasks = await parseImportSource('csv', { text: () => Promise.resolve(csvText) }, 'imported.csv');
+        const importedTasks = await importPdfViaApi(file);
         await applyImportedTasks(importedTasks);
         alert(`Imported ${importedTasks.length} task(s) from PDF.`);
       } catch (err) {
@@ -2880,6 +2902,37 @@
       } catch (err) {
         alert('Import failed: ' + (err.message || 'Unknown error'));
       }
+    }
+
+    async function importPdfViaApi(file) {
+      if (!USE_API || !getToken()) throw new Error('Please log in to import PDF.');
+      const form = new FormData();
+      form.append('file', file);
+      const headers = { 'Authorization': 'Bearer ' + getToken() };
+      const res = await fetch(API_BASE + '/api/import/pdf', { method: 'POST', headers, body: form });
+      if (res.status === 401) { clearToken(); throw new Error('Please log in to import PDF.'); }
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || 'PDF import failed');
+      }
+      const data = await res.json();
+      let tasks = data.tasks || [];
+      if (!tasks.length) throw new Error('No tasks found in PDF.');
+      tasks = ensureCoursesForImportedTasks(tasks);
+      return tasks;
+    }
+
+    function ensureCoursesForImportedTasks(importedTasks) {
+      return importedTasks.map(t => {
+        const cat = (t.category || '').trim();
+        if (!cat || t.courseId) return t;
+        let c = courses.find(x => x.name.toLowerCase() === cat.toLowerCase());
+        if (!c) {
+          c = { id: genId(), name: cat, description: '', color: DEFAULT_CATEGORY_COLOR };
+          courses.push(c);
+        }
+        return { ...t, courseId: c.id };
+      });
     }
 
     async function parseImportSource(sourceType, data, fileName) {

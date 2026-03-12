@@ -1,12 +1,23 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const multer = require('multer');
 const db = require('./db');
 const auth = require('./auth');
+const { parsePdfToTasks } = require('./pdf-parser');
 
 const usePostgres = !!process.env.DATABASE_URL;
 const app = express();
 const PORT = process.env.PORT || 3001;
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype === 'application/pdf') cb(null, true);
+    else cb(new Error('Only PDF files are allowed'));
+  },
+});
 
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
@@ -243,6 +254,28 @@ app.post('/api/sync', authMiddleware, async (req, res) => {
   }
 });
 
+app.post('/api/import/pdf', authMiddleware, (req, res, next) => {
+  upload.single('file')(req, res, (err) => {
+    if (err) {
+      if (err.code === 'LIMIT_FILE_SIZE') return res.status(400).json({ error: 'PDF file too large (max 10MB)' });
+      return res.status(400).json({ error: err.message || 'Invalid file upload' });
+    }
+    next();
+  });
+}, async (req, res) => {
+  try {
+    if (!req.file || !req.file.buffer) {
+      return res.status(400).json({ error: 'No PDF file uploaded. Use form field "file".' });
+    }
+    const filename = req.file.originalname || 'document.pdf';
+    const tasks = await parsePdfToTasks(req.file.buffer, filename);
+    res.json({ tasks });
+  } catch (err) {
+    console.error('PDF import error:', err);
+    res.status(400).json({ error: err.message || 'PDF parsing failed' });
+  }
+});
+
 app.get('/api/admin/stats', authMiddleware, adminMiddleware, async (req, res) => {
   if (!usePostgres) return res.status(404).json({ error: 'Not found' });
   try {
@@ -289,4 +322,4 @@ async function start() {
 start().catch(err => {
   console.error('Failed to start:', err);
   process.exit(1);
-});
+});
