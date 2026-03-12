@@ -139,20 +139,39 @@ function parseWithRegex(text, filename) {
   }
 
   let currentDate = '';
+  let dateBlockFirstDate = null; // First date in current date row (e.g. Mon–Fri) – use for content that follows
   const lines = (text || '').split(/\r?\n/).filter((l) => l.trim());
 
   for (const line of lines) {
     dueRe.lastIndex = 0;
     dateRe.lastIndex = 0;
     const dueMatch = dueRe.exec(line);
-    if (dueMatch) currentDate = normDate(dueMatch[1]) || currentDate;
-    const dateMatch = dateRe.exec(line);
-    if (dateMatch) currentDate = normDate(dateMatch[0]) || currentDate;
+    if (dueMatch) {
+      currentDate = normDate(dueMatch[1]) || currentDate;
+      dateBlockFirstDate = null; // "due" breaks date block
+    }
+
+    const dateMatches = [];
+    let m;
+    while ((m = dateRe.exec(line)) !== null) {
+      const d = normDate(m[0]);
+      if (d) dateMatches.push(d);
+    }
 
     let taskPart = line.replace(dateRe, '').replace(dueRe, '').replace(/\s+/g, ' ').trim();
     taskPart = taskPart.replace(/^(?:readings?|topic|assessment|homework|lab)\s*[:\-]\s*/i, '');
+    const tl = (taskPart || '').toLowerCase();
+    const isDateOnlyLine = dateMatches.length > 0 && (!taskPart || taskPart.length < 2 || noise.has(tl));
+
+    if (isDateOnlyLine) {
+      if (dateBlockFirstDate === null) dateBlockFirstDate = dateMatches[0];
+      currentDate = dateBlockFirstDate;
+      continue;
+    }
+    dateBlockFirstDate = null;
+    if (dateMatches.length > 0) currentDate = dateMatches[0]; // Content line with inline date
+
     if (!taskPart || taskPart.length < 2) continue;
-    const tl = taskPart.toLowerCase();
     if (noise.has(tl) || tl.startsWith('http') || /^page\s+\d+$/i.test(taskPart)) continue;
     const key = `${tl}|${currentDate}`;
     if (seen.has(key)) continue;
